@@ -200,6 +200,7 @@ void target_escort::follow(Detection target)
     offset=QPointF(x,y);
     if(speed!=get_speed(offset)){
         speed=get_speed(offset);
+        qDebug()<<"algorythm speed"<<offset;
         emit move_by_object(QString("%0|%1").arg(get_speed(offset).x()).arg(get_speed(offset).y()));
     }
     if(follow_zoom)follow_by_zoom(target);
