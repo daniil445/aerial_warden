@@ -83,37 +83,37 @@ motion_controller::motion_controller(QWidget *parent) :
         }
     });
 
-    connect(ui->pb_left_arrow, &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::NoModifier));});
-    connect(ui->pb_right_arrow,&QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::NoModifier));});
-    connect(ui->pb_up_arrow,   &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::NoModifier));});
-    connect(ui->pb_down_arrow, &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::NoModifier));});
+    // connect(ui->pb_left_arrow, &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::NoModifier));});
+    // connect(ui->pb_right_arrow,&QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::NoModifier));});
+    // connect(ui->pb_up_arrow,   &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::NoModifier));});
+    // connect(ui->pb_down_arrow, &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::NoModifier));});
     connect(ui->pb_home,       &QPushButton::pressed,[=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_H, Qt::NoModifier));});
     connect(ui->pb_aim,        &QPushButton::pressed,[=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_Q, Qt::NoModifier));});
-    connect(ui->pb_stop_xy,    &QPushButton::pressed,[=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_5, Qt::NoModifier));});
+    // connect(ui->pb_stop_xy,    &QPushButton::pressed,[=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_5, Qt::NoModifier));});
 
-    connect(ui->pb_top_left_arrow, &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::NoModifier));
-                                                                 emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::NoModifier));});
-    connect(ui->pb_top_right_arrow,&QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::NoModifier));
-                                                                 emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::NoModifier));});
-    connect(ui->pb_bot_left_arrow, &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::NoModifier));
-                                                                 emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::NoModifier));});
-    connect(ui->pb_bot_right_arrow,&QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::NoModifier));
-                                                                 emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::NoModifier));});
+    // connect(ui->pb_top_left_arrow, &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::NoModifier));
+                                                                 // emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::NoModifier));});
+    // connect(ui->pb_top_right_arrow,&QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::NoModifier));
+                                                                 // emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::NoModifier));});
+    // connect(ui->pb_bot_left_arrow, &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::NoModifier));
+                                                                 // emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::NoModifier));});
+    // connect(ui->pb_bot_right_arrow,&QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::NoModifier));
+                                                                 // emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::NoModifier));});
 
 
-    connect(ui->pb_left_arrow, &QPushButton::released,[=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::NoModifier));});
-    connect(ui->pb_right_arrow,&QPushButton::released,[=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::NoModifier));});
-    connect(ui->pb_up_arrow,   &QPushButton::released,[=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::NoModifier));});
-    connect(ui->pb_down_arrow, &QPushButton::released,[=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::NoModifier));});
+    // connect(ui->pb_left_arrow, &QPushButton::released,[=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::NoModifier));});
+    // connect(ui->pb_right_arrow,&QPushButton::released,[=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::NoModifier));});
+    // connect(ui->pb_up_arrow,   &QPushButton::released,[=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::NoModifier));});
+    // connect(ui->pb_down_arrow, &QPushButton::released,[=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::NoModifier));});
 
-    connect(ui->pb_top_left_arrow, &QPushButton::released, [=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::NoModifier));
-                                                                  emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::NoModifier));});
-    connect(ui->pb_top_right_arrow,&QPushButton::released, [=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::NoModifier));
-                                                                  emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::NoModifier));});
-    connect(ui->pb_bot_left_arrow, &QPushButton::released, [=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::NoModifier));
-                                                                  emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::NoModifier));});
-    connect(ui->pb_bot_right_arrow,&QPushButton::released, [=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::NoModifier));
-                                                                  emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::NoModifier));});
+    // connect(ui->pb_top_left_arrow, &QPushButton::released, [=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::NoModifier));
+    //                                                               emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::NoModifier));});
+    // connect(ui->pb_top_right_arrow,&QPushButton::released, [=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::NoModifier));
+    //                                                               emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::NoModifier));});
+    // connect(ui->pb_bot_left_arrow, &QPushButton::released, [=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::NoModifier));
+    //                                                               emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::NoModifier));});
+    // connect(ui->pb_bot_right_arrow,&QPushButton::released, [=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::NoModifier));
+    //                                                               emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::NoModifier));});
 
     connect(ui->sb_x_speed, &QDoubleSpinBox::valueChanged, [=](double val) {x_speed=(ui->zoom_ratio->isChecked())?val/cam_zoom:val;
         qDebug()<<"speed"<<x_speed<<y_speed;
@@ -262,12 +262,14 @@ void motion_controller::update_aim(QVector2D ang,QVector3D pos)
 
 void motion_controller::update_zoom(double val)
 {
-    if(val!=0){
-        cam_zoom=sqrt(val);
-        x_speed=(ui->zoom_ratio->isChecked())?ui->sb_x_speed->value()/cam_zoom:ui->sb_x_speed->value();
-        y_speed=(ui->zoom_ratio->isChecked())?ui->sb_y_speed->value()/cam_zoom:ui->sb_y_speed->value();
-    }
-//    qDebug()<<"update_zoom"<<val<<x_speed<<y_speed;
+    connected=val!=0;
+    this->setEnabled(connected);
+    ui->l_mot_status->setText(connected?"Connected":"Disconnected");
+
+    if(!connected) return;
+    cam_zoom=sqrt(val);
+    x_speed=(ui->zoom_ratio->isChecked())?ui->sb_x_speed->value()/cam_zoom:ui->sb_x_speed->value();
+    y_speed=(ui->zoom_ratio->isChecked())?ui->sb_y_speed->value()/cam_zoom:ui->sb_y_speed->value();
 }
 
 void motion_controller::on_pb_move_x_clicked()

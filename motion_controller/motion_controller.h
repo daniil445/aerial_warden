@@ -55,6 +55,7 @@ private:
     double aim_y=0;
 
     bool target_chosed=false;
+    bool connected=false;
     double target_x;
     double target_y;
 };

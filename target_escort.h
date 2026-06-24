@@ -45,8 +45,14 @@ private:
     double prev_x_speed;
     double prev_y_speed;
     double get_koef(double);
+    double get_speed(double);
+    QPointF get_speed(QPointF);
+
+    QPointF speed;
+    int zoom_target;
 
     void follow(Detection);
+    void follow_by_zoom(Detection);
     void play_test();
 
     bool test=true;

@@ -90,12 +90,13 @@ private:
 //    QString ptz_angle;
     QVector2D ptz_angle=QVector2D(0,0);
     QVector3D st_pos=QVector3D(0,0,0);
-    double st_dist=0;
+    double st_dist=-1;
 
     QQueue<QueuedMeta> m_metaQueue;
 
     QVector<Detection> findMetaByFrameId(int );
     void paint_overlay(QPainter *);
+    void paint_ai_objs(QPainter *);
     void draw_azimuth_scale(QPainter*, double);
     void drawPitchScale(QPainter*, double );
     QMutex m_queueMutex;

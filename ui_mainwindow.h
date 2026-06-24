@@ -57,7 +57,7 @@ public:
     QLabel *l_position;
     QLabel *l_text;
     QSpacerItem *horizontalSpacer;
-    QGroupBox *groupBox_4;
+    QGroupBox *widget_ai;
     QVBoxLayout *verticalLayout_4;
     QSpacerItem *verticalSpacer;
     QSpacerItem *verticalSpacer_3;
@@ -86,7 +86,7 @@ public:
     QGroupBox *groupBox;
     QVBoxLayout *verticalLayout;
     QSpacerItem *verticalSpacer_2;
-    QGroupBox *groupBox_3;
+    QGroupBox *widget_cam_zoom;
     QGridLayout *gridLayout_4;
     QLabel *label_4;
     QLabel *label_3;
@@ -103,8 +103,8 @@ public:
     {
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName("MainWindow");
-        MainWindow->resize(1785, 882);
-        MainWindow->setFocusPolicy(Qt::NoFocus);
+        MainWindow->resize(1785, 888);
+        MainWindow->setFocusPolicy(Qt::FocusPolicy::NoFocus);
         actionSettings = new QAction(MainWindow);
         actionSettings->setObjectName("actionSettings");
         actionInitialize_rotator = new QAction(MainWindow);
@@ -218,9 +218,9 @@ public:
 
         gridLayout->addLayout(gridLayout_3, 1, 3, 1, 1);
 
-        groupBox_4 = new QGroupBox(centralwidget);
-        groupBox_4->setObjectName("groupBox_4");
-        verticalLayout_4 = new QVBoxLayout(groupBox_4);
+        widget_ai = new QGroupBox(centralwidget);
+        widget_ai->setObjectName("widget_ai");
+        verticalLayout_4 = new QVBoxLayout(widget_ai);
         verticalLayout_4->setObjectName("verticalLayout_4");
         verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
 
@@ -230,7 +230,7 @@ public:
 
         verticalLayout_4->addItem(verticalSpacer_3);
 
-        tabWidget = new QTabWidget(groupBox_4);
+        tabWidget = new QTabWidget(widget_ai);
         tabWidget->setObjectName("tabWidget");
         tab = new QWidget();
         tab->setObjectName("tab");
@@ -255,7 +255,7 @@ public:
 
         verticalLayout_4->addWidget(tabWidget);
 
-        groupBox_2 = new QGroupBox(groupBox_4);
+        groupBox_2 = new QGroupBox(widget_ai);
         groupBox_2->setObjectName("groupBox_2");
         formLayout = new QFormLayout(groupBox_2);
         formLayout->setObjectName("formLayout");
@@ -299,7 +299,7 @@ public:
 
         verticalLayout_4->addWidget(groupBox_2);
 
-        groupBox_5 = new QGroupBox(groupBox_4);
+        groupBox_5 = new QGroupBox(widget_ai);
         groupBox_5->setObjectName("groupBox_5");
         verticalLayout_5 = new QVBoxLayout(groupBox_5);
         verticalLayout_5->setObjectName("verticalLayout_5");
@@ -335,7 +335,7 @@ public:
         verticalLayout_4->addWidget(groupBox_5);
 
 
-        gridLayout->addWidget(groupBox_4, 0, 1, 2, 1);
+        gridLayout->addWidget(widget_ai, 0, 1, 2, 1);
 
         groupBox = new QGroupBox(centralwidget);
         groupBox->setObjectName("groupBox");
@@ -346,65 +346,65 @@ public:
 
         verticalLayout->addItem(verticalSpacer_2);
 
-        groupBox_3 = new QGroupBox(groupBox);
-        groupBox_3->setObjectName("groupBox_3");
-        gridLayout_4 = new QGridLayout(groupBox_3);
+        widget_cam_zoom = new QGroupBox(groupBox);
+        widget_cam_zoom->setObjectName("widget_cam_zoom");
+        gridLayout_4 = new QGridLayout(widget_cam_zoom);
         gridLayout_4->setObjectName("gridLayout_4");
         gridLayout_4->setContentsMargins(3, 3, 3, 3);
-        label_4 = new QLabel(groupBox_3);
+        label_4 = new QLabel(widget_cam_zoom);
         label_4->setObjectName("label_4");
-        label_4->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        label_4->setAlignment(Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter);
 
         gridLayout_4->addWidget(label_4, 1, 2, 1, 1);
 
-        label_3 = new QLabel(groupBox_3);
+        label_3 = new QLabel(widget_cam_zoom);
         label_3->setObjectName("label_3");
-        label_3->setAlignment(Qt::AlignCenter);
+        label_3->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
         gridLayout_4->addWidget(label_3, 1, 1, 1, 1);
 
         horizontalLayout = new QHBoxLayout();
         horizontalLayout->setSpacing(3);
         horizontalLayout->setObjectName("horizontalLayout");
-        label = new QLabel(groupBox_3);
+        label = new QLabel(widget_cam_zoom);
         label->setObjectName("label");
-        label->setAlignment(Qt::AlignCenter);
+        label->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
         horizontalLayout->addWidget(label);
 
-        l_zoom = new QLabel(groupBox_3);
+        l_zoom = new QLabel(widget_cam_zoom);
         l_zoom->setObjectName("l_zoom");
         l_zoom->setMaximumSize(QSize(16777215, 16777215));
-        l_zoom->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        l_zoom->setAlignment(Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter);
 
         horizontalLayout->addWidget(l_zoom);
 
 
         gridLayout_4->addLayout(horizontalLayout, 3, 1, 1, 1);
 
-        label_2 = new QLabel(groupBox_3);
+        label_2 = new QLabel(widget_cam_zoom);
         label_2->setObjectName("label_2");
 
         gridLayout_4->addWidget(label_2, 1, 0, 1, 1);
 
-        zoom_slider = new QSlider(groupBox_3);
+        zoom_slider = new QSlider(widget_cam_zoom);
         zoom_slider->setObjectName("zoom_slider");
         zoom_slider->setMinimum(1);
         zoom_slider->setMaximum(50);
         zoom_slider->setPageStep(5);
-        zoom_slider->setOrientation(Qt::Horizontal);
-        zoom_slider->setTickPosition(QSlider::TicksAbove);
+        zoom_slider->setOrientation(Qt::Orientation::Horizontal);
+        zoom_slider->setTickPosition(QSlider::TickPosition::TicksAbove);
 
         gridLayout_4->addWidget(zoom_slider, 2, 0, 1, 3);
 
 
-        verticalLayout->addWidget(groupBox_3);
+        verticalLayout->addWidget(widget_cam_zoom);
 
         controls = new motion_controller(groupBox);
         controls->setObjectName("controls");
         controls->setMinimumSize(QSize(235, 225));
         controls->setMaximumSize(QSize(235, 225));
-        controls->setFocusPolicy(Qt::StrongFocus);
+        controls->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
 
         verticalLayout->addWidget(controls);
 
@@ -414,7 +414,7 @@ public:
         MainWindow->setCentralWidget(centralwidget);
         menubar = new QMenuBar(MainWindow);
         menubar->setObjectName("menubar");
-        menubar->setGeometry(QRect(0, 0, 1785, 20));
+        menubar->setGeometry(QRect(0, 0, 1785, 22));
         menuMenu = new QMenu(menubar);
         menuMenu->setObjectName("menuMenu");
         MainWindow->setMenuBar(menubar);
@@ -447,7 +447,7 @@ public:
         l_dist->setText(QString());
         l_position->setText(QString());
         l_text->setText(QCoreApplication::translate("MainWindow", "frame count: ", nullptr));
-        groupBox_4->setTitle(QCoreApplication::translate("MainWindow", "AI", nullptr));
+        widget_ai->setTitle(QCoreApplication::translate("MainWindow", "AI", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tab), QCoreApplication::translate("MainWindow", "Identificated", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tab_2), QCoreApplication::translate("MainWindow", "Detected", nullptr));
         groupBox_2->setTitle(QCoreApplication::translate("MainWindow", "Visibility", nullptr));
@@ -463,7 +463,7 @@ public:
         btn_search->setText(QCoreApplication::translate("MainWindow", "search objects", nullptr));
         btn_dist->setText(QCoreApplication::translate("MainWindow", "calculate distance", nullptr));
         groupBox->setTitle(QCoreApplication::translate("MainWindow", "Sender", nullptr));
-        groupBox_3->setTitle(QCoreApplication::translate("MainWindow", "Camera", nullptr));
+        widget_cam_zoom->setTitle(QCoreApplication::translate("MainWindow", "Camera", nullptr));
         label_4->setText(QCoreApplication::translate("MainWindow", "50", nullptr));
         label_3->setText(QCoreApplication::translate("MainWindow", "25", nullptr));
         label->setText(QCoreApplication::translate("MainWindow", "Zoom:", nullptr));

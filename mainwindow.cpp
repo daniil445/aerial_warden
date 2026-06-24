@@ -125,6 +125,8 @@ void MainWindow::update_meta(int frame, double zoom)
 {
     ui->l_fps->setText(QString::number(frame/100000.0,'d',3));
     ui->l_zoom->setText(QString::number(zoom,'d',3));
+    ui->widget_cam_zoom->setEnabled(zoom!=0);
+    ui->actionInitialize_rotator->setEnabled(zoom!=0);
     emit update_zoom(zoom);
 }
 
@@ -168,6 +170,7 @@ void MainWindow::sendMoveToCommand(double pos_x, double pos_y, double speed_x, d
 
 void MainWindow::update_list(QVector<Detection> obj)
 {
+    ui->widget_ai->setEnabled(obj.length()!=0);
     QVector<Detection> moves;
     QVector<Detection> objects;
     foreach (Detection var, obj) {

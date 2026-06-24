@@ -168,31 +168,53 @@ double target_escort::get_koef(double var)
     return koef*var/abs(var);
 }
 
+double target_escort::get_speed(double percent)
+{
+    QList<int> speeds={-40,-30,-20,-15,-10,-8,-5,-3,-2,-1,0,1,2,3,5,8,10,15,20,30,40};
+    if (qAbs(percent) < 0.01) return 0;
+    percent = qBound(-0.5, percent, 0.5);
+    double norm = (percent + 0.5) / 1.0;  // [0..1]
+    int index = qRound(norm * (speeds.size() - 1));
+    return speeds[index];
+}
+
+QPointF target_escort::get_speed(QPointF percents)
+{
+    QPointF speeds=QPointF(get_speed(percents.x()),get_speed(percents.y()));
+    return speeds;
+}
+
+QPointF pix_to_angles( QPointF target_angle, QPoint pix_obj, QPoint fov, QSize size){
+    double degPerPixelX = fov.x() / size.width();
+    double degPerPixelY = fov.y() / size.height();
+    double dAz = target_angle.x() - pix_obj.x();
+    double dEl = target_angle.y() - pix_obj.y();
+    return QPointF(size.width() / 2.0  + dAz / degPerPixelX, size.height() / 2.0 - dEl / degPerPixelY);
+}
+
 void target_escort::follow(Detection target)
 {
     qDebug()<<"algorythm follow"<<target.id;
     double x= (-image_size.width() /2+target.get_center().x())/image_size.toSizeF().width();
     double y= (-image_size.height()/2+target.get_center().y())/image_size.toSizeF().height();
     offset=QPointF(x,y);
-    QThread::msleep(100);
-
-    if(y_speed*get_koef(offset.y())!=prev_y_speed || x_speed*get_koef(offset.x())!=prev_x_speed){
-        qDebug()<<"algorythm played "<<QString("(%0,%1)-(%2,%3)-(%4,%5)")
-                  .arg(QString::number(x_speed,'d',2)).arg(QString::number(y_speed,'d',2))
-                  .arg(QString::number(get_koef(offset.x()),'d',2)).arg(QString::number(get_koef(offset.y()),'d',2))
-                  .arg(QString::number(offset.x(),'d',2)).arg(QString::number(offset.y(),'d',2));
-        emit move_by_object(QString("%0|%1").arg(x_speed*get_koef(offset.x())).arg(y_speed*get_koef(offset.y())));
-        prev_x_speed=x_speed*get_koef(offset.x());
-        prev_y_speed=y_speed*get_koef(offset.y());
+    if(speed!=get_speed(offset)){
+        speed=get_speed(offset);
+        emit move_by_object(QString("%0|%1").arg(get_speed(offset).x()).arg(get_speed(offset).y()));
     }
+    if(follow_zoom)follow_by_zoom(target);
+
+    QThread::msleep(10);
+}
+
+void target_escort::follow_by_zoom(Detection target)
+{
     double diagonal = std::sqrt(target.box.width() * target.box.width() + target.box.height() * target.box.height());
     QSettings settings("config.ini", QSettings::IniFormat);
     QVariantList temp =settings.value("obj_size").toList();
-    qDebug()<<"algorythm size"<<diagonal<<target.classname;
-    if(follow_zoom){
-        if(diagonal<temp[target.classname].toInt())emit zoom_to_object(zoom_state+1);
-//        else emit zoom_to_object(0);
-    }else{
-//        zoom_to_object(0);
-    }
+    zoom_target=diagonal/zoom_state/(double)temp[target.classname].toInt();
+    qDebug()<<"algorythm size"<<diagonal<<target.classname<<temp[target.classname].toInt()<<zoom_target;
+    if(diagonal<temp[target.classname].toInt())emit zoom_to_object(zoom_state+1);
+    //        else emit zoom_to_object(0);
+    //        zoom_to_object(0);
 }

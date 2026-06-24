@@ -160,78 +160,15 @@ void VideoWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT);
     QPainter painter(this);
     QMutexLocker lock(&m_mutex);
-
     QImage imgToDraw = m_image;
-    // Уменьшаем только если картинка больше окна
-//    if (imgSize.width() > widgetSize.width() || imgSize.height() > widgetSize.height()){
-//        drawSize = imgSize.scaled( widgetSize, Qt::KeepAspectRatio);
-//        imgToDraw = m_image.scaled( drawSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-//    }
-
-//    int x = (widgetSize.width()  - drawSize.width())  / 2;
-//    int off_y = (widgetSize.height() - drawSize.height()) / 2;
-
     painter.drawImage(rect(),imgToDraw);
     paint_overlay(&painter);
-//    double scale=widgetSize.height()/double(drawSize.height());
 
-    if(d_frame_time!=0 && c_zoom!=0)emit set_meta_f_z(d_frame_time,c_zoom);
+    emit set_meta_f_z(d_frame_time,c_zoom);
     emit set_meta_a_p(ptz_angle,st_pos);
-    if(st_dist!=0)emit set_meta_d(st_dist);
+    emit set_meta_d(st_dist);
 
-//    if(m_metaQueue.length()>0)qDebug()<<"m_metaQueue "<<m_metaQueue.last().ai_objs.length();
-//    foreach (auto var, m_metaQueue) {
-//        qDebug()<<var.metaId;
-//    }
-//    qDebug()<<"m_frameQueue";
-//    foreach (auto var, m_frameQueue) {
-//        qDebug()<<var.frameId;
-//    }
-    QVector<Detection> objects=findMetaByFrameId(d_frame_time);
-    if(objects.length()==0)objects=last_detection;
-    else last_detection=objects;
-
-    emit send_obj_list(objects);
-
-    for (const Detection& det : objects)
-    {
-//        if(main_obj==det)
-        if(det.classname==-1&& !motion_visible)continue;
-        if(det.classname==0 && !motion_planes)continue;
-        if(det.classname==1 && !motion_birds)continue;
-        if(det.classname==2 && !motion_drones)continue;
-        if(det.classname==3 && !motion_cars)continue;
-        if(det.classname==4 && !motion_mans)continue;
-
-        QRect r(
-            int(det.box.x()),
-            int(det.box.y()),
-            int(det.box.width()),
-            int(det.box.height())
-            );
-
-//                qDebug()<<"ibj ai"<<r<<sx<<sy<<det.box<<m_image.size()<<width()<<height();
-        if(det.classname==0)painter.setPen(Qt::red);
-        else if(det.classname==1)painter.setPen(Qt::black);
-        else if(det.classname==2)painter.setPen("orange");
-        else if(det.classname==3)painter.setPen(Qt::white);
-        else if(det.classname==4)painter.setPen(Qt::blue);
-        else if(det.classname==-1)painter.setPen(Qt::yellow);
-        else painter.setPen(Qt::gray);
-        painter.drawRect(r);
-
-        QSettings settings("config.ini", QSettings::IniFormat);
-        QStringList temp =settings.value("obj_name").toStringList();
-        QString label = QString("%1 %2 (p:%3)")
-                            .arg(det.classname==-1?"move":temp.value(det.classname))
-                            .arg(det.id)
-                            .arg(det.prec, 0, 'f', 2);
-
-        QFontMetrics fm = painter.fontMetrics();
-        int textHeight = fm.height();
-
-        painter.drawText(r.bottomLeft() + QPoint(0, textHeight), label);
-    }
+    paint_ai_objs(&painter);
 }
 
 
@@ -246,6 +183,44 @@ void VideoWidget::paint_overlay(QPainter* painter)
 //    painter->drawEllipse(x,y,20,20);
     draw_azimuth_scale(painter,ptz_angle.x());
     drawPitchScale(painter,ptz_angle.y());
+}
+
+void VideoWidget::paint_ai_objs(QPainter * painter)
+{
+    QVector<Detection> objects=findMetaByFrameId(d_frame_time);
+    if(objects.length()==0){
+        objects=last_detection;
+    }else{
+        last_detection=objects;
+    }
+    emit send_obj_list(objects);
+    for (const Detection& det : objects)
+    {
+        if(det.classname==-1&& !motion_visible)continue;
+        if(det.classname==0 && !motion_planes)continue;
+        if(det.classname==1 && !motion_birds)continue;
+        if(det.classname==2 && !motion_drones)continue;
+        if(det.classname==3 && !motion_cars)continue;
+        if(det.classname==4 && !motion_mans)continue;
+
+        QRect r(int(det.box.x()),int(det.box.y()),int(det.box.width()),int(det.box.height()) );
+
+        if(det.classname==0)painter->setPen(Qt::red);
+        else if(det.classname==1)painter->setPen(Qt::black);
+        else if(det.classname==2)painter->setPen("orange");
+        else if(det.classname==3)painter->setPen(Qt::white);
+        else if(det.classname==4)painter->setPen(Qt::blue);
+        else if(det.classname==-1)painter->setPen(Qt::yellow);
+        else painter->setPen(Qt::gray);
+        painter->drawRect(r);
+
+        QSettings settings("config.ini", QSettings::IniFormat);
+        QStringList temp =settings.value("obj_name").toStringList();
+        QString label = QString("%1 %2 (p:%3)").arg(det.classname==-1?"move":temp.value(det.classname)).arg(det.id).arg(det.prec, 0, 'f', 2);
+        QFontMetrics fm = painter->fontMetrics();
+        int textHeight = fm.height();
+        painter->drawText(r.bottomLeft() + QPoint(0, textHeight), label);
+    }
 }
 
 void VideoWidget::draw_azimuth_scale( QPainter* painter, double headingDeg)
