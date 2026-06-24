@@ -1,0 +1,20 @@
+<RCC>
+    <qresource prefix="/img">
+        <file>image/arrows/arrow clockwise.png</file>
+        <file>image/arrows/arrow counterclock.png</file>
+        <file>image/arrows/arrow_bottom.png</file>
+        <file>image/arrows/arrow_down.png</file>
+        <file>image/arrows/arrow_left.png</file>
+        <file>image/arrows/arrow_right.png</file>
+        <file>image/arrows/arrow_top.png</file>
+        <file>image/arrows/arrow_up.png</file>
+        <file>image/arrows/home.png</file>
+        <file>image/arrows/stop.png</file>
+        <file>image/arrows/aim.png</file>
+        <file>image/arrows/arrow_left_down.png</file>
+        <file>image/arrows/arrow_left_up.png</file>
+        <file>image/arrows/arrow_right_down.png</file>
+        <file>image/arrows/arrow_right_up.png</file>
+        <file>image/arrows/aim_ready.png</file>
+    </qresource>
+</RCC>
