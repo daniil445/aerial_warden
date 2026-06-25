@@ -24,7 +24,7 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
     QueuedFrame qf;
     qf.frameId = time;   // твоя метка
     qf.image = img.copy();
-    if(curr_size!=img.size()) emit update_size(this->size());// img.size());
+    curr_size=img.size();
     QMutexLocker locker(&m_queueMutex);
 
     m_frameQueue.enqueue(qf);
@@ -78,8 +78,9 @@ void VideoWidget::setMeta(const QJsonObject &obj)
     double sy = height() / double(m_image.height());
     QVector<Detection> ai_objs;
     for (const QJsonValue& var : ai)
-    {
+    { 
         ai_obj.classname=var["class"].toInt();
+
         ai_obj.id=var["id"].toInt();
         ai_obj.prec=var["conf"].toDouble();
         QJsonArray rect =  var["box"].toArray();
@@ -91,8 +92,8 @@ void VideoWidget::setMeta(const QJsonObject &obj)
         if(pos.count()>2)ai_pos.station_pos=QVector3D(pos[0].toDouble(),pos[1].toDouble(),pos[2].toDouble());
         if(st_ang.count()>2)ai_pos.station_angle=QVector3D(st_ang[0].toDouble(),st_ang[1].toDouble(),st_ang[2].toDouble());
         ai_pos.distance=st_dist;
+        if(ai_obj.classname!=-1)ai_obj.set_angle_center(QPointF(ptz_ang[0].toDouble(),ptz_ang[1].toDouble()),ai_obj.get_center(),QPoint(62,36),curr_size,this->size());
 
-        ai_obj.history.append(ai_pos);
         ai_objs.append(ai_obj);
     }
 
@@ -102,6 +103,11 @@ void VideoWidget::setMeta(const QJsonObject &obj)
     QMutexLocker locker(&m_queueMutex);
     m_metaQueue.enqueue(meta);
     while (m_metaQueue.size() > MAX_QUEUE) m_metaQueue.dequeue();
+}
+
+void VideoWidget::update_focus(Detection focus)
+{
+    main_obj=focus;
 }
 
 void VideoWidget::show_movement(bool motion_visible)
@@ -204,14 +210,17 @@ void VideoWidget::paint_ai_objs(QPainter * painter)
         if(det.classname==4 && !motion_mans)continue;
 
         QRect r(int(det.box.x()),int(det.box.y()),int(det.box.width()),int(det.box.height()) );
-
-        if(det.classname==0)painter->setPen(Qt::red);
-        else if(det.classname==1)painter->setPen(Qt::black);
-        else if(det.classname==2)painter->setPen("orange");
-        else if(det.classname==3)painter->setPen(Qt::white);
-        else if(det.classname==4)painter->setPen(Qt::blue);
-        else if(det.classname==-1)painter->setPen(Qt::yellow);
-        else painter->setPen(Qt::gray);
+        QColor color;
+        if(det.classname==0)color=Qt::red;
+        else if(det.classname==1)color=Qt::black;
+        else if(det.classname==2)color=Qt::green;
+        else if(det.classname==3)color=Qt::white;
+        else if(det.classname==4)color=Qt::blue;
+        else if(det.classname==-1)color=Qt::yellow;
+        else color=Qt::gray;
+        double pen_size=1;
+        if(det.classname==main_obj.classname && det.id==main_obj.id)pen_size=4;
+        painter->setPen(QPen(color,pen_size));
         painter->drawRect(r);
 
         QSettings settings("config.ini", QSettings::IniFormat);
@@ -299,3 +308,4 @@ void VideoWidget::drawPitchScale(QPainter* painter, double pitchDeg)
     painter->drawText( x - 60, centerY +5, QString("%1°").arg(pitchDeg, 0, 'f', 1)
     );
 }
+

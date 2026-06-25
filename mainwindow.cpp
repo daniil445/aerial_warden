@@ -48,6 +48,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(follower, &target_escort::move_by_object, sender, &CommandSender::sendMove);
     connect(follower,&target_escort::move_to_object,this,&MainWindow::sendMoveToCommand);
     connect(this, &MainWindow::update_focus,follower, &target_escort::update_focus);
+    connect(this, &MainWindow::update_focus,ui->openGLWidget_RGB, &VideoWidget::update_focus);
     connect(ui->openGLWidget_RGB,&VideoWidget::send_obj_list,follower, &target_escort::update_list);
     connect(follower, &target_escort::zoom_to_object, [=](double val) {sender->sendZoom(main_stream,val);});
 
@@ -207,7 +208,9 @@ void MainWindow::work_with_list(QListWidget * visual, QMap <QString,Detection>* 
         }else{
             (*storage_objects)[name].old=0;
             (*storage_objects)[name].box=var.box;
-            (*storage_objects)[name].history.append(var.history);
+            (*storage_objects)[name].history.append(var.angle_center);
+            if((*storage_objects)[name].history.length()>10)(*storage_objects)[name].history.pop_back();
+//             qDebug()<<"storage_history"<<name<<(*storage_objects)[name].history;
         }
     }
     for (int i = visual->count() - 1; i >= 0; --i)
@@ -239,9 +242,12 @@ void MainWindow::update_list_IR(QVector<Detection> list)
 
 }
 
-void MainWindow::on_obj_list_currentTextChanged(const QString &currentText)
+
+
+void MainWindow::on_obj_list_itemClicked(QListWidgetItem *item)
 {
-    if(storage.contains(currentText))emit update_focus(storage.value(currentText));
+    focus_name=item->text();
+    if(storage.contains(focus_name))emit update_focus(storage.value(focus_name));
 }
 
 
@@ -281,6 +287,7 @@ void MainWindow::on_btn_dist_clicked(bool checked)
         sender->sendCmd("stop_distance");
     }
 }
+
 
 
 

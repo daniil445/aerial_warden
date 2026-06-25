@@ -27,7 +27,7 @@ void target_escort::pause()
     scan=false;
     play_scan=false;
     play_scan_y_pos=false;
-    first.id=-1;
+    objct.id=-1;
     idenificated=false;
 }
 
@@ -40,16 +40,17 @@ void target_escort::link_storages(QMap<QString, Detection> * s_move, QMap<QStrin
 
 void target_escort::update_focus(Detection focus)
 {
-    if(focus.id==-1)//pause();
-    objct.box=focus.box;
-    objct.classname=focus.classname;
-    objct.id=focus.id;
-    objct.old=focus.old;
-    objct.prec=focus.prec;
-    objct.box=focus.box;
+    if(focus.id!=-1){//pause();
+        objct.box=focus.box;
+        objct.classname=focus.classname;
+        objct.id=focus.id;
+        objct.old=focus.old;
+        objct.prec=focus.prec;
+        objct.box=focus.box;
+    }
 //    if(objc1t.history.length()>5) objct.history.pop_front();
 //    objct.history.append(focus.get_center());
-//    qDebug()<<" objct.history"<< objct.history;
+//    qDebug()<<" objct.history"<< objct.classname<< objct.id;
 }
 
 void target_escort::update_size(QSize size)
@@ -175,21 +176,13 @@ double target_escort::get_speed(double percent)
     percent = qBound(-0.5, percent, 0.5);
     double norm = (percent + 0.5) / 1.0;  // [0..1]
     int index = qRound(norm * (speeds.size() - 1));
-    return speeds[index];
+    return speeds[index]/zoom_state;
 }
 
 QPointF target_escort::get_speed(QPointF percents)
 {
     QPointF speeds=QPointF(get_speed(percents.x()),get_speed(percents.y()));
     return speeds;
-}
-
-QPointF pix_to_angles( QPointF target_angle, QPoint pix_obj, QPoint fov, QSize size){
-    double degPerPixelX = fov.x() / size.width();
-    double degPerPixelY = fov.y() / size.height();
-    double dAz = target_angle.x() - pix_obj.x();
-    double dEl = target_angle.y() - pix_obj.y();
-    return QPointF(size.width() / 2.0  + dAz / degPerPixelX, size.height() / 2.0 - dEl / degPerPixelY);
 }
 
 void target_escort::follow(Detection target)
@@ -200,7 +193,7 @@ void target_escort::follow(Detection target)
     offset=QPointF(x,y);
     if(speed!=get_speed(offset)){
         speed=get_speed(offset);
-        qDebug()<<"algorythm speed"<<offset;
+        qDebug()<<"algorythm speed"<<offset<<get_speed(offset);
         emit move_by_object(QString("%0|%1").arg(get_speed(offset).x()).arg(get_speed(offset).y()));
     }
     if(follow_zoom)follow_by_zoom(target);

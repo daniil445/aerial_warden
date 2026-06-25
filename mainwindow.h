@@ -49,13 +49,10 @@ public slots:
 protected:
 //    bool eventFilter(QObject *obj, QEvent *event) override;
 private slots:
-
-    void on_obj_list_currentTextChanged(const QString &currentText);
     void on_btn_follow_clicked(bool checked);
-
     void on_btn_search_clicked(bool checked);
-
     void on_btn_dist_clicked(bool checked);
+    void on_obj_list_itemClicked(QListWidgetItem *item);
 
 private:
     Ui::MainWindow *ui;
@@ -76,6 +73,7 @@ private:
     double temp_speed_y=0;
     QString main_ip;
     QString main_stream="rgb_zoom_fix";
+    QString focus_name;
     int main_port;
     int meta_port;
 

@@ -20,6 +20,7 @@ struct Global_coor
     double distance;
 };
 
+
 struct Detection
 {
     int classname;
@@ -27,10 +28,25 @@ struct Detection
     int old = 0;
     double prec = 0.0;
     QRect box;   // координаты в исходном кадре
-    QList<Global_coor> history;
-    QPointF get_center(){
-       return box.center().toPointF();
-    };
+    QList<QPointF> history;
+    QPoint get_center(){
+       return box.center();
+    }
+    QPointF angle_center;
+    void set_angle_center(QPointF target_angle, QPoint pix_obj, QPoint fov, QSize size, QSize screen_size){
+        double degPerPixelX = fov.x() / (double)size.width();
+        double degPerPixelY = fov.y() / (double)size.height();
+
+        double sx = screen_size.width()  / double(size.width());
+        double sy = screen_size.height() / double(size.height());
+
+        double dx = pix_obj.x()*sx - size.width()  / 2.0;
+        double dy = pix_obj.y()*sy - size.height() / 2.0;
+        double objAz = target_angle.x() + dx * degPerPixelX;
+        double objEl = target_angle.y() + dy * degPerPixelY;
+        angle_center = QPointF(objAz, objEl);
+        qDebug()<<"set_angle_center"<<target_angle<<pix_obj<<dx<<dy<<angle_center;
+    }
 };
 
 struct QueuedFrame
@@ -66,6 +82,7 @@ signals:
 public slots:
     void setFrame(quint64 name,const QImage& img);
     void setMeta(const QJsonObject& obj);
+    void update_focus(Detection);
     void show_movement(bool);
     void show_planes(bool);
     void show_drones(bool);
