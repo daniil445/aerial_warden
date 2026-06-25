@@ -28,11 +28,14 @@ signals:
     void moveCommand(QString cmd, double speed, bool pressed);
     void moveToCommand(double pos_x, double pos_y, double speed_x, double speed_y);
     void update_speed_x_y(double,double);
+    void send_zoom(int);
+    void change_cam(int);
 
 protected:
-    void keyPressEvent(QKeyEvent* event) override;
-    void keyReleaseEvent(QKeyEvent* event) override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
 public slots:
+    void keyPressEvent(QKeyEvent* event);
+    void keyReleaseEvent(QKeyEvent* event);
     void update_aim(QVector2D,QVector3D);
     void update_zoom(double);
 private slots:

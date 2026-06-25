@@ -73,6 +73,16 @@ class VideoWidget : public QOpenGLWidget, protected QOpenGLFunctions
 public:
     explicit VideoWidget(QWidget* parent = nullptr);
     QImage temp_image;
+
+    bool motion_visible =false;
+    bool motion_planes =true;
+    bool motion_drones =true;
+    bool motion_birds =true;
+    bool motion_cars =true;
+    bool motion_mans =true;
+    bool show_aim =true;
+    bool show_degree =true;
+    bool show_text =true;
 signals:
     void send_obj_list(QVector<Detection>);
     void update_size(QSize size);
@@ -83,12 +93,6 @@ public slots:
     void setFrame(quint64 name,const QImage& img);
     void setMeta(const QJsonObject& obj);
     void update_focus(Detection);
-    void show_movement(bool);
-    void show_planes(bool);
-    void show_drones(bool);
-    void show_birds(bool);
-    void show_cars(bool);
-    void show_mans(bool);
 
 protected:
     void paintGL() override;
@@ -96,38 +100,32 @@ protected:
 private:
     QMutex m_mutex;
 
+    QMutex m_queueMutex;
+    int MAX_QUEUE=3;
+    QQueue<QueuedMeta> m_metaQueue;
     QQueue<QueuedFrame> m_frameQueue;
     QImage m_image;
     quint64 d_frame_time=0;
     QSize curr_size;
     double c_zoom=0;
 
-//    QString st_angle;
     QVector3D st_angle=QVector3D(0,0,0);
-//    QString ptz_angle;
     QVector2D ptz_angle=QVector2D(0,0);
     QVector3D st_pos=QVector3D(0,0,0);
     double st_dist=-1;
 
-    QQueue<QueuedMeta> m_metaQueue;
+    QVector<Detection> findMetaByFrameId(int);
+    QVector<Detection> last_detection;
+    Detection main_obj;
 
-    QVector<Detection> findMetaByFrameId(int );
+    QColor green_overlay=QColor(0, 0xdd, 0, 0xaa);
+    QColor red_overlay=QColor(0xdd, 0, 0, 0xaa);
     void paint_overlay(QPainter *);
     void paint_ai_objs(QPainter *);
+    void draw_aim(QPainter *painter,QPoint);
     void draw_azimuth_scale(QPainter*, double);
-    void drawPitchScale(QPainter*, double );
-    QMutex m_queueMutex;
-
-    QVector<Detection> last_detection;
-    int MAX_QUEUE=3;
-    Detection main_obj;
-    bool motion_visible =false;
-
-    bool motion_planes =true;
-    bool motion_drones =true;
-    bool motion_birds =true;
-    bool motion_cars =true;
-    bool motion_mans =true;
+    void drawPitchScale(QPainter*, double);
+    void draw_text(QPainter *painter);
 };
 
 #endif // VIDEOWIDGET_H

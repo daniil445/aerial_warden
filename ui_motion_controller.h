@@ -19,6 +19,7 @@
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QSlider>
 #include <QtWidgets/QSpacerItem>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QVBoxLayout>
@@ -51,20 +52,22 @@ public:
     QWidget *tab_6;
     QVBoxLayout *verticalLayout_4;
     QGridLayout *gridLayout_8;
+    QHBoxLayout *horizontalLayout_4;
+    QLabel *label_3;
+    QLabel *label_5;
+    QLabel *label_4;
     QDoubleSpinBox *sb_y_speed;
+    QLabel *label_16;
+    QLabel *label_12;
+    QSlider *speed_slider;
+    QLabel *label_15;
+    QDoubleSpinBox *sb_x_speed;
     QHBoxLayout *horizontalLayout;
     QSpacerItem *horizontalSpacer_3;
     QCheckBox *zoom_ratio;
     QSpacerItem *horizontalSpacer;
-    QDoubleSpinBox *sb_x_speed_3;
-    QDoubleSpinBox *sb_x_speed_2;
     QLabel *label_13;
-    QLabel *label_12;
-    QDoubleSpinBox *sb_x_speed;
     QFrame *line;
-    QLabel *label_14;
-    QLabel *label_16;
-    QLabel *label_15;
     QSpacerItem *verticalSpacer_3;
     QHBoxLayout *horizontalLayout_3;
     QLabel *label_2;
@@ -208,6 +211,28 @@ public:
         gridLayout_8 = new QGridLayout();
         gridLayout_8->setSpacing(6);
         gridLayout_8->setObjectName("gridLayout_8");
+        horizontalLayout_4 = new QHBoxLayout();
+        horizontalLayout_4->setObjectName("horizontalLayout_4");
+        label_3 = new QLabel(tab_6);
+        label_3->setObjectName("label_3");
+
+        horizontalLayout_4->addWidget(label_3);
+
+        label_5 = new QLabel(tab_6);
+        label_5->setObjectName("label_5");
+        label_5->setAlignment(Qt::AlignmentFlag::AlignCenter);
+
+        horizontalLayout_4->addWidget(label_5);
+
+        label_4 = new QLabel(tab_6);
+        label_4->setObjectName("label_4");
+        label_4->setAlignment(Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter);
+
+        horizontalLayout_4->addWidget(label_4);
+
+
+        gridLayout_8->addLayout(horizontalLayout_4, 6, 0, 1, 2);
+
         sb_y_speed = new QDoubleSpinBox(tab_6);
         sb_y_speed->setObjectName("sb_y_speed");
         QSizePolicy sizePolicy3(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Fixed);
@@ -224,6 +249,46 @@ public:
         sb_y_speed->setValue(10.000000000000000);
 
         gridLayout_8->addWidget(sb_y_speed, 3, 1, 1, 1);
+
+        label_16 = new QLabel(tab_6);
+        label_16->setObjectName("label_16");
+
+        gridLayout_8->addWidget(label_16, 1, 0, 1, 1);
+
+        label_12 = new QLabel(tab_6);
+        label_12->setObjectName("label_12");
+
+        gridLayout_8->addWidget(label_12, 2, 0, 1, 1);
+
+        speed_slider = new QSlider(tab_6);
+        speed_slider->setObjectName("speed_slider");
+        speed_slider->setMinimum(1);
+        speed_slider->setMaximum(500);
+        speed_slider->setPageStep(25);
+        speed_slider->setValue(100);
+        speed_slider->setOrientation(Qt::Orientation::Horizontal);
+        speed_slider->setTickPosition(QSlider::TickPosition::TicksAbove);
+
+        gridLayout_8->addWidget(speed_slider, 7, 0, 1, 2);
+
+        label_15 = new QLabel(tab_6);
+        label_15->setObjectName("label_15");
+
+        gridLayout_8->addWidget(label_15, 5, 0, 1, 1);
+
+        sb_x_speed = new QDoubleSpinBox(tab_6);
+        sb_x_speed->setObjectName("sb_x_speed");
+        sizePolicy3.setHeightForWidth(sb_x_speed->sizePolicy().hasHeightForWidth());
+        sb_x_speed->setSizePolicy(sizePolicy3);
+        sb_x_speed->setMinimumSize(QSize(65, 0));
+        sb_x_speed->setFocusPolicy(Qt::FocusPolicy::WheelFocus);
+        sb_x_speed->setDecimals(3);
+        sb_x_speed->setMinimum(0.001000000000000);
+        sb_x_speed->setMaximum(300.000000000000000);
+        sb_x_speed->setSingleStep(0.100000000000000);
+        sb_x_speed->setValue(10.000000000000000);
+
+        gridLayout_8->addWidget(sb_x_speed, 2, 1, 1, 1);
 
         horizontalLayout = new QHBoxLayout();
         horizontalLayout->setObjectName("horizontalLayout");
@@ -243,81 +308,17 @@ public:
 
         gridLayout_8->addLayout(horizontalLayout, 1, 1, 1, 1);
 
-        sb_x_speed_3 = new QDoubleSpinBox(tab_6);
-        sb_x_speed_3->setObjectName("sb_x_speed_3");
-        sb_x_speed_3->setEnabled(false);
-        sizePolicy3.setHeightForWidth(sb_x_speed_3->sizePolicy().hasHeightForWidth());
-        sb_x_speed_3->setSizePolicy(sizePolicy3);
-        sb_x_speed_3->setMinimumSize(QSize(65, 0));
-        sb_x_speed_3->setFocusPolicy(Qt::FocusPolicy::WheelFocus);
-        sb_x_speed_3->setDecimals(3);
-        sb_x_speed_3->setMinimum(0.001000000000000);
-        sb_x_speed_3->setMaximum(300.000000000000000);
-        sb_x_speed_3->setSingleStep(0.100000000000000);
-        sb_x_speed_3->setValue(1.000000000000000);
-
-        gridLayout_8->addWidget(sb_x_speed_3, 6, 1, 1, 1);
-
-        sb_x_speed_2 = new QDoubleSpinBox(tab_6);
-        sb_x_speed_2->setObjectName("sb_x_speed_2");
-        sb_x_speed_2->setEnabled(false);
-        sizePolicy3.setHeightForWidth(sb_x_speed_2->sizePolicy().hasHeightForWidth());
-        sb_x_speed_2->setSizePolicy(sizePolicy3);
-        sb_x_speed_2->setMinimumSize(QSize(65, 0));
-        sb_x_speed_2->setFocusPolicy(Qt::FocusPolicy::WheelFocus);
-        sb_x_speed_2->setDecimals(3);
-        sb_x_speed_2->setMinimum(0.001000000000000);
-        sb_x_speed_2->setMaximum(300.000000000000000);
-        sb_x_speed_2->setSingleStep(0.100000000000000);
-        sb_x_speed_2->setValue(1.000000000000000);
-
-        gridLayout_8->addWidget(sb_x_speed_2, 5, 1, 1, 1);
-
         label_13 = new QLabel(tab_6);
         label_13->setObjectName("label_13");
 
         gridLayout_8->addWidget(label_13, 3, 0, 1, 1);
-
-        label_12 = new QLabel(tab_6);
-        label_12->setObjectName("label_12");
-
-        gridLayout_8->addWidget(label_12, 2, 0, 1, 1);
-
-        sb_x_speed = new QDoubleSpinBox(tab_6);
-        sb_x_speed->setObjectName("sb_x_speed");
-        sizePolicy3.setHeightForWidth(sb_x_speed->sizePolicy().hasHeightForWidth());
-        sb_x_speed->setSizePolicy(sizePolicy3);
-        sb_x_speed->setMinimumSize(QSize(65, 0));
-        sb_x_speed->setFocusPolicy(Qt::FocusPolicy::WheelFocus);
-        sb_x_speed->setDecimals(3);
-        sb_x_speed->setMinimum(0.001000000000000);
-        sb_x_speed->setMaximum(300.000000000000000);
-        sb_x_speed->setSingleStep(0.100000000000000);
-        sb_x_speed->setValue(10.000000000000000);
-
-        gridLayout_8->addWidget(sb_x_speed, 2, 1, 1, 1);
 
         line = new QFrame(tab_6);
         line->setObjectName("line");
         line->setFrameShape(QFrame::HLine);
         line->setFrameShadow(QFrame::Sunken);
 
-        gridLayout_8->addWidget(line, 4, 0, 1, 2);
-
-        label_14 = new QLabel(tab_6);
-        label_14->setObjectName("label_14");
-
-        gridLayout_8->addWidget(label_14, 5, 0, 1, 1);
-
-        label_16 = new QLabel(tab_6);
-        label_16->setObjectName("label_16");
-
-        gridLayout_8->addWidget(label_16, 1, 0, 1, 1);
-
-        label_15 = new QLabel(tab_6);
-        label_15->setObjectName("label_15");
-
-        gridLayout_8->addWidget(label_15, 6, 0, 1, 1);
+        gridLayout_8->addWidget(line, 4, 0, 1, 1);
 
 
         verticalLayout_4->addLayout(gridLayout_8);
@@ -372,12 +373,14 @@ public:
         pb_move_x->setText(QCoreApplication::translate("motion_controller", "Move to X", nullptr));
         pb_all_axis_move->setText(QCoreApplication::translate("motion_controller", "Move to XY", nullptr));
         control_widget->setTabText(control_widget->indexOf(tab_5), QCoreApplication::translate("motion_controller", "Position", nullptr));
+        label_3->setText(QCoreApplication::translate("motion_controller", "1", nullptr));
+        label_5->setText(QCoreApplication::translate("motion_controller", "25", nullptr));
+        label_4->setText(QCoreApplication::translate("motion_controller", "50", nullptr));
+        label_16->setText(QCoreApplication::translate("motion_controller", "Zoom ratio", nullptr));
+        label_12->setText(QCoreApplication::translate("motion_controller", "Velocity (X), \302\260/sec", nullptr));
+        label_15->setText(QCoreApplication::translate("motion_controller", "Overall Velocity , \302\260/sec", nullptr));
         zoom_ratio->setText(QString());
         label_13->setText(QCoreApplication::translate("motion_controller", "Velocity (Y), \302\260/sec", nullptr));
-        label_12->setText(QCoreApplication::translate("motion_controller", "Velocity (X), \302\260/sec", nullptr));
-        label_14->setText(QCoreApplication::translate("motion_controller", "Acceleration (X), \302\260/sec\302\262", nullptr));
-        label_16->setText(QCoreApplication::translate("motion_controller", "Zoom ratio", nullptr));
-        label_15->setText(QCoreApplication::translate("motion_controller", "Acceleration (Y),\302\260/sec\302\262", nullptr));
         control_widget->setTabText(control_widget->indexOf(tab_6), QCoreApplication::translate("motion_controller", "Settings", nullptr));
         label_2->setText(QCoreApplication::translate("motion_controller", "STATUS:", nullptr));
         l_mot_status->setText(QCoreApplication::translate("motion_controller", "Disconnected", nullptr));

@@ -11,13 +11,16 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
-    connect(ui->cb_show_moves, &QCheckBox::toggled, ui->openGLWidget_RGB, &VideoWidget::show_movement);
-    connect(ui->cb_show_planes, &QCheckBox::toggled,ui->openGLWidget_RGB, &VideoWidget::show_planes);
-    connect(ui->cb_show_drones, &QCheckBox::toggled,ui->openGLWidget_RGB, &VideoWidget::show_drones);
-    connect(ui->cb_show_birds, &QCheckBox::toggled, ui->openGLWidget_RGB, &VideoWidget::show_birds);
-    connect(ui->cb_show_cars, &QCheckBox::toggled,  ui->openGLWidget_RGB, &VideoWidget::show_cars);
-    connect(ui->cb_show_mans, &QCheckBox::toggled,  ui->openGLWidget_RGB, &VideoWidget::show_mans);
+    //// VIdeo
+    connect(ui->cb_show_moves, &QCheckBox::toggled, [=](bool val) {ui->openGLWidget_RGB->motion_visible=val;});
+    connect(ui->cb_show_planes, &QCheckBox::toggled,[=](bool val) {ui->openGLWidget_RGB->motion_planes=val;});
+    connect(ui->cb_show_drones, &QCheckBox::toggled,[=](bool val) {ui->openGLWidget_RGB->motion_drones=val;});
+    connect(ui->cb_show_birds, &QCheckBox::toggled, [=](bool val) {ui->openGLWidget_RGB->motion_birds=val;});
+    connect(ui->cb_show_cars, &QCheckBox::toggled,  [=](bool val) {ui->openGLWidget_RGB->motion_cars=val;});
+    connect(ui->cb_show_mans, &QCheckBox::toggled,  [=](bool val) {ui->openGLWidget_RGB->motion_mans=val;});
+    connect(ui->cb_show_aim, &QCheckBox::toggled,[=](bool val) {ui->openGLWidget_RGB->show_aim=val;});
+    connect(ui->cb_show_degree, &QCheckBox::toggled,[=](bool val) {ui->openGLWidget_RGB->show_degree=val;});
+    connect(ui->cb_show_text, &QCheckBox::toggled,[=](bool val) {ui->openGLWidget_RGB->show_text=val;});
 
 
 
@@ -39,8 +42,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     sender = new CommandSender(this);
     connect(ui->zoom_slider, &QSlider::sliderReleased, [=]() {sender->sendZoom(main_stream,ui->zoom_slider->value());});
-
-
+    connect(ui->controls, &motion_controller::send_zoom,ui->zoom_slider,&QSlider::setValue);
     follower= new target_escort(this);
     follower->link_storages(&storage_move,&storage);
     connect(ui->alg_zoom, &QCheckBox::toggled, [=](bool var) {follower->follow_zoom=var;});
@@ -58,6 +60,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->controls, &motion_controller::moveToCommand,this,&MainWindow::sendMoveToCommand);
 
     connect(ui->controls, &motion_controller::update_speed_x_y,follower,&target_escort::update_speed_x_y);
+    connect(ui->controls, &motion_controller::change_cam,ui->widget_cam,&QTabWidget::setCurrentIndex);
+            // [=](int val) { qDebug()<<"val"<<val;ui->widget_cam->setCurrentIndex(val);});
 
     UDP_receiver = new CommandReceiver(this);
     connect(this,&MainWindow::update_zoom,ui->controls, &motion_controller::update_zoom);
@@ -81,8 +85,7 @@ MainWindow::MainWindow(QWidget *parent)
 //            (QCoreApplication::applicationDirPath() + "/gstreamer-1.0").toUtf8());
 //    qputenv("GST_PLUGIN_SYSTEM_PATH",
 //            (QCoreApplication::applicationDirPath() + "/gstreamer-1.0").toUtf8());
-    qApp->installEventFilter(this);
-    ui->controls->setFocus();
+    // qApp->installEventFilter(this);
 }
 
 MainWindow::~MainWindow()
@@ -125,7 +128,7 @@ void MainWindow::try_to_connect(QStringList url_cam_rgb,QStringList url_cam_ir,Q
 void MainWindow::update_meta(int frame, double zoom)
 {
     ui->l_fps->setText(QString::number(frame/100000.0,'d',3));
-    ui->l_zoom->setText(QString::number(zoom,'d',3));
+    // ui->l_zoom->setText(QString::number(zoom,'d',3));
     ui->widget_cam_zoom->setEnabled(zoom!=0);
     ui->actionInitialize_rotator->setEnabled(zoom!=0);
     emit update_zoom(zoom);

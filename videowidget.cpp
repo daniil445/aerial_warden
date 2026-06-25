@@ -110,36 +110,6 @@ void VideoWidget::update_focus(Detection focus)
     main_obj=focus;
 }
 
-void VideoWidget::show_movement(bool motion_visible)
-{
-    this->motion_visible = motion_visible;
-}
-
-void VideoWidget::show_planes(bool state)
-{
-    motion_planes= state;
-}
-
-void VideoWidget::show_drones(bool state)
-{
-    motion_drones= state;
-}
-
-void VideoWidget::show_birds(bool state)
-{
-    motion_birds = state;
-}
-
-void VideoWidget::show_cars(bool state)
-{
-    motion_cars= state;
-}
-
-void VideoWidget::show_mans(bool state)
-{
-    motion_mans= state;
-}
-
  QVector<Detection> VideoWidget::findMetaByFrameId(int frameId)
 {
     while (!m_metaQueue.isEmpty())
@@ -166,29 +136,46 @@ void VideoWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT);
     QPainter painter(this);
     QMutexLocker lock(&m_mutex);
-    QImage imgToDraw = m_image;
-    painter.drawImage(rect(),imgToDraw);
-    paint_overlay(&painter);
 
     emit set_meta_f_z(d_frame_time,c_zoom);
     emit set_meta_a_p(ptz_angle,st_pos);
     emit set_meta_d(st_dist);
 
+    QImage imgToDraw = m_image;
+    painter.drawImage(rect(),imgToDraw);
+    paint_overlay(&painter);
     paint_ai_objs(&painter);
 }
 
 
 void VideoWidget::paint_overlay(QPainter* painter)
 {
-    painter->setPen(QPen(Qt::green, 2));
+    if(show_aim)draw_aim(painter,QPoint(rect().width() /2,rect().height()/2));
+    if(show_text)draw_text(painter);
+    if(show_degree){
+        draw_azimuth_scale(painter,ptz_angle.x());
+        drawPitchScale(painter,ptz_angle.y());
+    }
+}
+
+void VideoWidget::draw_text(QPainter * painter)
+{
+    QFont font("Consolas", 10);
+    font.setStyleHint(QFont::Monospace);
+    painter->setFont(font);
+    painter->setPen(QPen(green_overlay, 2));
+    painter->drawText(10, 30, QString("ZOOM :%1 x").arg(c_zoom  , 4, 'f', 1));
+    painter->drawText(10, 50, QString("FOCUS:%1 mm").arg(c_zoom*6, 4, 'f', 1));
+}
+
+void VideoWidget::draw_aim(QPainter * painter,QPoint aim)
+{
+    painter->setPen(QPen(green_overlay, 2));
     double x= rect().width() /2;
     double y= rect().height()/2;
     double cross_size=50;
-    painter->drawLine(QPoint(x-cross_size,y),QPoint(x+cross_size,y));
-    painter->drawLine(QPoint(x,y-cross_size),QPoint(x,y+cross_size));
-//    painter->drawEllipse(x,y,20,20);
-    draw_azimuth_scale(painter,ptz_angle.x());
-    drawPitchScale(painter,ptz_angle.y());
+    painter->drawLine(QPoint(aim.x()-cross_size,aim.y()),QPoint(aim.x()+cross_size,aim.y()));
+    painter->drawLine(QPoint(aim.x(),aim.y()-cross_size),QPoint(aim.x(),aim.y()+cross_size));
 }
 
 void VideoWidget::paint_ai_objs(QPainter * painter)
@@ -219,7 +206,10 @@ void VideoWidget::paint_ai_objs(QPainter * painter)
         else if(det.classname==-1)color=Qt::yellow;
         else color=Qt::gray;
         double pen_size=1;
-        if(det.classname==main_obj.classname && det.id==main_obj.id)pen_size=4;
+        if(det.classname==main_obj.classname && det.id==main_obj.id){
+            pen_size=4;
+            draw_aim(painter,main_obj.get_center());
+        }
         painter->setPen(QPen(color,pen_size));
         painter->drawRect(r);
 
@@ -238,7 +228,7 @@ void VideoWidget::draw_azimuth_scale( QPainter* painter, double headingDeg)
     const int scaleWidth = width() * 0.8;
     const int centerX = width() / 2;
     const int leftX = centerX - scaleWidth / 2;
-    painter->setPen(QPen(Qt::green, 2));
+    painter->setPen(QPen(green_overlay, 2));
     painter->drawLine(leftX, y, leftX + scaleWidth, y);
     const double visibleDeg = 120.0;
     const double pxPerDeg = scaleWidth / visibleDeg;
@@ -273,7 +263,7 @@ void VideoWidget::draw_azimuth_scale( QPainter* painter, double headingDeg)
             painter->drawText( x - tw / 2, y + tickHeight + fm.height(), text);
         }
     }
-    painter->setPen(QPen(Qt::red, 3));
+    painter->setPen(QPen(red_overlay, 3));
     painter->drawLine(centerX, y - 10, centerX, y + 15);
     painter->drawText(centerX - 8, y - 15, QString("%1°").arg(headingDeg, 0, 'f', 1));
 }
@@ -284,7 +274,7 @@ void VideoWidget::drawPitchScale(QPainter* painter, double pitchDeg)
     const int scaleHeight = height() * 0.8;
     const int centerY = height() / 2;
     const int topY = centerY - scaleHeight / 2;
-    painter->setPen(QPen(Qt::green, 2));
+    painter->setPen(QPen(green_overlay, 2));
     painter->drawLine(x, topY, x, topY + scaleHeight);
     const double visibleDeg = 60.0;
     const double pxPerDeg = scaleHeight / visibleDeg;
@@ -303,7 +293,7 @@ void VideoWidget::drawPitchScale(QPainter* painter, double pitchDeg)
             painter->drawText( x - tickLen - fm.horizontalAdvance(text) - 5, y + fm.height() / 3, text);
         }
     }
-    painter->setPen(QPen(Qt::red, 3));
+    painter->setPen(QPen(red_overlay, 3));
     painter->drawLine( x - 15, centerY, x + 10, centerY);
     painter->drawText( x - 60, centerY +5, QString("%1°").arg(pitchDeg, 0, 'f', 1)
     );

@@ -8,40 +8,41 @@ motion_controller::motion_controller(QWidget *parent) :
     ui(new Ui::motion_controller)
 {
     ui->setupUi(this);
+    qApp->installEventFilter(this);
 
 
     connect(ui->round_widget , &PtzControlWidget::pressed, this, [this](PtzControlWidget::Direction direction) {
         switch (static_cast<int>((int)direction)) {
         case 0:
-            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::NoModifier));
+            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::KeypadModifier));
             break;
         case 1:
-            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::NoModifier));
-            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::NoModifier));
+            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::KeypadModifier));
+            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::KeypadModifier));
             break;
         case 2:
-            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::NoModifier));
+            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::KeypadModifier));
             break;
         case 3:
-            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::NoModifier));
-            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::NoModifier));
+            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::KeypadModifier));
+            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::KeypadModifier));
             break;
         case 4:
-            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::NoModifier));
+            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::KeypadModifier));
             break;
         case 5:
-            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::NoModifier));
-            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::NoModifier));
+            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::KeypadModifier));
+            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::KeypadModifier));
             break;
         case 6:
-            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::NoModifier));
+            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::KeypadModifier));
             break;
         case 7:
-            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::NoModifier));
-            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::NoModifier));
+            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::KeypadModifier));
+            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::KeypadModifier));
             break;
         case 8:
-            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_5, Qt::NoModifier));
+            emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_5, Qt::KeypadModifier));
             break;
         default:
             break;
@@ -51,75 +52,44 @@ motion_controller::motion_controller(QWidget *parent) :
     connect(ui->round_widget, &PtzControlWidget::released, this, [this](PtzControlWidget::Direction direction) {
         switch (static_cast<int>((int)direction)) {
         case 0:
-            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::NoModifier));
+            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::KeypadModifier));
             break;
         case 1:
-            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::NoModifier));
-            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::NoModifier));
+            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::KeypadModifier));
+            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::KeypadModifier));
             break;
         case 2:
-            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::NoModifier));
+            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::KeypadModifier));
             break;
         case 3:
-            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::NoModifier));
-            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::NoModifier));
+            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::KeypadModifier));
+            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::KeypadModifier));
             break;
         case 4:
-            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::NoModifier));
+            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::KeypadModifier));
             break;
         case 5:
-            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::NoModifier));
-            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::NoModifier));
+            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::KeypadModifier));
+            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::KeypadModifier));
             break;
         case 6:
-            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::NoModifier));
+            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::KeypadModifier));
             break;
         case 7:
-            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::NoModifier));
-            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::NoModifier));
+            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::KeypadModifier));
+            emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::KeypadModifier));
             break;
         default:
             break;
         }
     });
 
-    // connect(ui->pb_left_arrow, &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::NoModifier));});
-    // connect(ui->pb_right_arrow,&QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::NoModifier));});
-    // connect(ui->pb_up_arrow,   &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::NoModifier));});
-    // connect(ui->pb_down_arrow, &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::NoModifier));});
     connect(ui->pb_home,       &QPushButton::pressed,[=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_H, Qt::NoModifier));});
     connect(ui->pb_aim,        &QPushButton::pressed,[=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_Q, Qt::NoModifier));});
-    // connect(ui->pb_stop_xy,    &QPushButton::pressed,[=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_5, Qt::NoModifier));});
-
-    // connect(ui->pb_top_left_arrow, &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::NoModifier));
-                                                                 // emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::NoModifier));});
-    // connect(ui->pb_top_right_arrow,&QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_8, Qt::NoModifier));
-                                                                 // emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::NoModifier));});
-    // connect(ui->pb_bot_left_arrow, &QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::NoModifier));
-                                                                 // emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_4, Qt::NoModifier));});
-    // connect(ui->pb_bot_right_arrow,&QPushButton::pressed, [=]() {emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_2, Qt::NoModifier));
-                                                                 // emit keyPressEvent(new QKeyEvent(QEvent::KeyPress, Qt::Key_6, Qt::NoModifier));});
-
-
-    // connect(ui->pb_left_arrow, &QPushButton::released,[=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::NoModifier));});
-    // connect(ui->pb_right_arrow,&QPushButton::released,[=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::NoModifier));});
-    // connect(ui->pb_up_arrow,   &QPushButton::released,[=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::NoModifier));});
-    // connect(ui->pb_down_arrow, &QPushButton::released,[=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::NoModifier));});
-
-    // connect(ui->pb_top_left_arrow, &QPushButton::released, [=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::NoModifier));
-    //                                                               emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::NoModifier));});
-    // connect(ui->pb_top_right_arrow,&QPushButton::released, [=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_8, Qt::NoModifier));
-    //                                                               emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::NoModifier));});
-    // connect(ui->pb_bot_left_arrow, &QPushButton::released, [=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::NoModifier));
-    //                                                               emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_4, Qt::NoModifier));});
-    // connect(ui->pb_bot_right_arrow,&QPushButton::released, [=]() {emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_2, Qt::NoModifier));
-    //                                                               emit keyReleaseEvent(new QKeyEvent(QEvent::KeyRelease, Qt::Key_6, Qt::NoModifier));});
-
+    connect(ui->speed_slider, &QSlider::valueChanged, [=](int val) {ui->sb_x_speed->setValue(val/10.0); ui->sb_y_speed->setValue(val/10.0);});
     connect(ui->sb_x_speed, &QDoubleSpinBox::valueChanged, [=](double val) {x_speed=(ui->zoom_ratio->isChecked())?val/cam_zoom:val;
-        qDebug()<<"speed"<<x_speed<<y_speed;
                                                                             emit update_speed_x_y(x_speed,y_speed);});
     connect(ui->sb_y_speed, &QDoubleSpinBox::valueChanged, [=](double val) {y_speed=(ui->zoom_ratio->isChecked())?val/cam_zoom:val;
-        qDebug()<<"speed"<<x_speed<<y_speed;
                                                                             emit update_speed_x_y(x_speed,y_speed);});
 
     QTimer::singleShot(200, this, [=]()
@@ -135,49 +105,71 @@ motion_controller::~motion_controller()
     delete ui;
 }
 
+bool motion_controller::eventFilter(QObject *obj, QEvent *event)
+{
+
+    if (event->type() == QEvent::KeyPress){
+        auto *keyEvent = static_cast<QKeyEvent*>(event);
+        keyPressEvent(keyEvent);
+    }else if (event->type() == QEvent::KeyRelease){
+        auto *keyEvent = static_cast<QKeyEvent*>(event);
+        keyReleaseEvent(keyEvent);
+    }
+    return QObject::eventFilter(obj, event);
+}
+
 void motion_controller::keyPressEvent(QKeyEvent* event)
 {
     if (event->isAutoRepeat())
         return;
 
+    bool isNumpad = event->modifiers() & Qt::KeypadModifier;
+
     switch (event->key())
     {
     case Qt::Key_8:
-        emit moveCommand("up",y_speed, true);
+        if (isNumpad) emit moveCommand("up",y_speed, true);
         break;
 
     case Qt::Key_2:
-        emit moveCommand("down",y_speed, true);
+        if (isNumpad) emit moveCommand("down",y_speed, true);
+        else emit change_cam(1);
         break;
 
     case Qt::Key_4:
-        emit moveCommand("left",x_speed, true);
+        if (isNumpad) emit moveCommand("left",x_speed, true);
         break;
 
     case Qt::Key_6:
-        emit moveCommand("right",x_speed, true);
+        if (isNumpad) emit moveCommand("right",x_speed, true);
         break;
     case Qt::Key_7:
-        emit moveCommand("up",y_speed, true);
-        emit moveCommand("left",x_speed, true);
+        if (isNumpad) emit moveCommand("up",y_speed, true);
+        if (isNumpad) emit moveCommand("left",x_speed, true);
         break;
     case Qt::Key_9:
-        emit moveCommand("up",y_speed, true);
-        emit moveCommand("right",x_speed, true);
+        if (isNumpad) emit moveCommand("up",y_speed, true);
+        if (isNumpad) emit moveCommand("right",x_speed, true);
         break;
     case Qt::Key_1:
-        emit moveCommand("left",x_speed, true);
-        emit moveCommand("down",y_speed, true);
+        if (isNumpad){
+            emit moveCommand("left",x_speed, true);
+            emit moveCommand("down",y_speed, true);
+        }else{
+            emit change_cam(0);
+        }
         break;
 
     case Qt::Key_3:
-        emit moveCommand("right",x_speed, true);
-        emit moveCommand("down",y_speed, true);
+        if (isNumpad) emit moveCommand("right",x_speed, true);
+        if (isNumpad) emit moveCommand("down",y_speed, true);
         break;
     case Qt::Key_Plus:
+        if (isNumpad) emit send_zoom(cam_zoom+1);
         break;
 
     case Qt::Key_Minus:
+        if (isNumpad) emit send_zoom(cam_zoom-1);
         break;
 
     case Qt::Key_Q:
@@ -202,54 +194,54 @@ void motion_controller::keyPressEvent(QKeyEvent* event)
 
 void motion_controller::keyReleaseEvent(QKeyEvent* event)
 {
-    if (event->isAutoRepeat())
-        return;
+    if (event->isAutoRepeat()) return;
+    bool isNumpad = event->modifiers() & Qt::KeypadModifier;
 
     switch (event->key())
     {
     case Qt::Key_8:
-        emit moveCommand("up",y_speed, false);
+        if (isNumpad) emit moveCommand("up",y_speed, false);
         break;
 
     case Qt::Key_2:
-        emit moveCommand("down",y_speed, false);
+        if (isNumpad) emit moveCommand("down",y_speed, false);
         break;
 
     case Qt::Key_4:
-        emit moveCommand("left",x_speed, false);
+        if (isNumpad) emit moveCommand("left",x_speed, false);
         break;
 
     case Qt::Key_6:
-        emit moveCommand("right",x_speed, false);
+        if (isNumpad) emit moveCommand("right",x_speed, false);
         break;
 
     case Qt::Key_7:
-        emit moveCommand("up",y_speed, false);
-        emit moveCommand("left",x_speed, false);
+        if (isNumpad) emit moveCommand("up",y_speed, false);
+        if (isNumpad) emit moveCommand("left",x_speed, false);
         break;
 
     case Qt::Key_9:
-        emit moveCommand("down",y_speed, false);
-        emit moveCommand("right",x_speed, false);
+        if (isNumpad) emit moveCommand("down",y_speed, false);
+        if (isNumpad) emit moveCommand("right",x_speed, false);
         break;
 
     case Qt::Key_1:
-        emit moveCommand("left",x_speed, false);
-        emit moveCommand("down",y_speed, false);
+        if (isNumpad) emit moveCommand("left",x_speed, false);
+        if (isNumpad) emit moveCommand("down",y_speed, false);
         break;
 
     case Qt::Key_3:
-        emit moveCommand("right",x_speed, false);
-        emit moveCommand("down",y_speed, false);
+        if (isNumpad) emit moveCommand("right",x_speed, false);
+        if (isNumpad) emit moveCommand("down",y_speed, false);
         break;
     case Qt::Key_Plus:
-        ui->sb_x_speed->setValue(ui->sb_x_speed->value()+1);
+        // ui->sb_x_speed->setValue(ui->sb_x_speed->value()+1);
 //        emit moveCommand("rgb_zoom",0, false);
         break;
 
     case Qt::Key_Minus:
-        ui->sb_x_speed->setValue(ui->sb_x_speed->value()-1);
-        emit moveCommand("rgb_zoom",0, false);
+        // ui->sb_x_speed->setValue(ui->sb_x_speed->value()-1);
+        // emit moveCommand("rgb_zoom",0, false);
         break;
     }
 }

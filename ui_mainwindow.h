@@ -13,7 +13,7 @@
 #include <QtGui/QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QCheckBox>
-#include <QtWidgets/QFormLayout>
+#include <QtWidgets/QFrame>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QGroupBox>
 #include <QtWidgets/QHBoxLayout>
@@ -40,11 +40,11 @@ public:
     QAction *actionInitialize_rotator;
     QWidget *centralwidget;
     QGridLayout *gridLayout;
-    QTabWidget *tabWidget_2;
-    QWidget *tab_3;
+    QTabWidget *widget_cam;
+    QWidget *rgb;
     QHBoxLayout *horizontalLayout_3;
     VideoWidget *openGLWidget_RGB;
-    QWidget *tab_4;
+    QWidget *ir;
     QHBoxLayout *horizontalLayout_4;
     VideoWidget *openGLWidget_IR;
     QGridLayout *gridLayout_3;
@@ -69,13 +69,17 @@ public:
     QVBoxLayout *verticalLayout_3;
     QListWidget *obj_list_move;
     QGroupBox *groupBox_2;
-    QFormLayout *formLayout;
+    QGridLayout *gridLayout_5;
+    QCheckBox *cb_show_mans;
     QCheckBox *cb_show_moves;
     QCheckBox *cb_show_planes;
     QCheckBox *cb_show_birds;
-    QCheckBox *cb_show_drones;
-    QCheckBox *cb_show_mans;
+    QFrame *line;
     QCheckBox *cb_show_cars;
+    QCheckBox *cb_show_drones;
+    QCheckBox *cb_show_aim;
+    QCheckBox *cb_show_degree;
+    QCheckBox *cb_show_text;
     QGroupBox *groupBox_5;
     QVBoxLayout *verticalLayout_5;
     QGridLayout *gridLayout_2;
@@ -88,13 +92,10 @@ public:
     QSpacerItem *verticalSpacer_2;
     QGroupBox *widget_cam_zoom;
     QGridLayout *gridLayout_4;
+    QSlider *zoom_slider;
+    QLabel *label_2;
     QLabel *label_4;
     QLabel *label_3;
-    QHBoxLayout *horizontalLayout;
-    QLabel *label;
-    QLabel *l_zoom;
-    QLabel *label_2;
-    QSlider *zoom_slider;
     motion_controller *controls;
     QMenuBar *menubar;
     QMenu *menuMenu;
@@ -114,15 +115,15 @@ public:
         gridLayout = new QGridLayout(centralwidget);
         gridLayout->setObjectName("gridLayout");
         gridLayout->setContentsMargins(0, 0, 0, 0);
-        tabWidget_2 = new QTabWidget(centralwidget);
-        tabWidget_2->setObjectName("tabWidget_2");
-        tab_3 = new QWidget();
-        tab_3->setObjectName("tab_3");
-        horizontalLayout_3 = new QHBoxLayout(tab_3);
+        widget_cam = new QTabWidget(centralwidget);
+        widget_cam->setObjectName("widget_cam");
+        rgb = new QWidget();
+        rgb->setObjectName("rgb");
+        horizontalLayout_3 = new QHBoxLayout(rgb);
         horizontalLayout_3->setSpacing(0);
         horizontalLayout_3->setObjectName("horizontalLayout_3");
         horizontalLayout_3->setContentsMargins(0, 0, 0, 0);
-        openGLWidget_RGB = new VideoWidget(tab_3);
+        openGLWidget_RGB = new VideoWidget(rgb);
         openGLWidget_RGB->setObjectName("openGLWidget_RGB");
         QSizePolicy sizePolicy(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Expanding);
         sizePolicy.setHorizontalStretch(0);
@@ -133,14 +134,14 @@ public:
 
         horizontalLayout_3->addWidget(openGLWidget_RGB);
 
-        tabWidget_2->addTab(tab_3, QString());
-        tab_4 = new QWidget();
-        tab_4->setObjectName("tab_4");
-        horizontalLayout_4 = new QHBoxLayout(tab_4);
+        widget_cam->addTab(rgb, QString());
+        ir = new QWidget();
+        ir->setObjectName("ir");
+        horizontalLayout_4 = new QHBoxLayout(ir);
         horizontalLayout_4->setSpacing(0);
         horizontalLayout_4->setObjectName("horizontalLayout_4");
         horizontalLayout_4->setContentsMargins(0, 0, 0, 0);
-        openGLWidget_IR = new VideoWidget(tab_4);
+        openGLWidget_IR = new VideoWidget(ir);
         openGLWidget_IR->setObjectName("openGLWidget_IR");
         sizePolicy.setHeightForWidth(openGLWidget_IR->sizePolicy().hasHeightForWidth());
         openGLWidget_IR->setSizePolicy(sizePolicy);
@@ -148,9 +149,9 @@ public:
 
         horizontalLayout_4->addWidget(openGLWidget_IR);
 
-        tabWidget_2->addTab(tab_4, QString());
+        widget_cam->addTab(ir, QString());
 
-        gridLayout->addWidget(tabWidget_2, 0, 3, 1, 1);
+        gridLayout->addWidget(widget_cam, 0, 3, 1, 1);
 
         gridLayout_3 = new QGridLayout();
         gridLayout_3->setObjectName("gridLayout_3");
@@ -257,44 +258,69 @@ public:
 
         groupBox_2 = new QGroupBox(widget_ai);
         groupBox_2->setObjectName("groupBox_2");
-        formLayout = new QFormLayout(groupBox_2);
-        formLayout->setObjectName("formLayout");
-        formLayout->setContentsMargins(0, 0, 0, 0);
+        gridLayout_5 = new QGridLayout(groupBox_2);
+        gridLayout_5->setObjectName("gridLayout_5");
+        gridLayout_5->setContentsMargins(0, 0, 0, 0);
+        cb_show_mans = new QCheckBox(groupBox_2);
+        cb_show_mans->setObjectName("cb_show_mans");
+        cb_show_mans->setChecked(true);
+
+        gridLayout_5->addWidget(cb_show_mans, 4, 2, 1, 1);
+
         cb_show_moves = new QCheckBox(groupBox_2);
         cb_show_moves->setObjectName("cb_show_moves");
         cb_show_moves->setChecked(false);
 
-        formLayout->setWidget(1, QFormLayout::LabelRole, cb_show_moves);
+        gridLayout_5->addWidget(cb_show_moves, 0, 2, 1, 1);
 
         cb_show_planes = new QCheckBox(groupBox_2);
         cb_show_planes->setObjectName("cb_show_planes");
         cb_show_planes->setChecked(true);
 
-        formLayout->setWidget(1, QFormLayout::FieldRole, cb_show_planes);
+        gridLayout_5->addWidget(cb_show_planes, 1, 2, 1, 1);
 
         cb_show_birds = new QCheckBox(groupBox_2);
         cb_show_birds->setObjectName("cb_show_birds");
         cb_show_birds->setChecked(true);
 
-        formLayout->setWidget(2, QFormLayout::FieldRole, cb_show_birds);
+        gridLayout_5->addWidget(cb_show_birds, 2, 2, 1, 1);
 
-        cb_show_drones = new QCheckBox(groupBox_2);
-        cb_show_drones->setObjectName("cb_show_drones");
-        cb_show_drones->setChecked(true);
+        line = new QFrame(groupBox_2);
+        line->setObjectName("line");
+        line->setFrameShape(QFrame::VLine);
+        line->setFrameShadow(QFrame::Sunken);
 
-        formLayout->setWidget(3, QFormLayout::FieldRole, cb_show_drones);
-
-        cb_show_mans = new QCheckBox(groupBox_2);
-        cb_show_mans->setObjectName("cb_show_mans");
-        cb_show_mans->setChecked(true);
-
-        formLayout->setWidget(4, QFormLayout::FieldRole, cb_show_mans);
+        gridLayout_5->addWidget(line, 0, 0, 6, 1);
 
         cb_show_cars = new QCheckBox(groupBox_2);
         cb_show_cars->setObjectName("cb_show_cars");
         cb_show_cars->setChecked(true);
 
-        formLayout->setWidget(5, QFormLayout::FieldRole, cb_show_cars);
+        gridLayout_5->addWidget(cb_show_cars, 5, 2, 1, 1);
+
+        cb_show_drones = new QCheckBox(groupBox_2);
+        cb_show_drones->setObjectName("cb_show_drones");
+        cb_show_drones->setChecked(true);
+
+        gridLayout_5->addWidget(cb_show_drones, 3, 2, 1, 1);
+
+        cb_show_aim = new QCheckBox(groupBox_2);
+        cb_show_aim->setObjectName("cb_show_aim");
+        cb_show_aim->setChecked(true);
+
+        gridLayout_5->addWidget(cb_show_aim, 0, 1, 1, 1);
+
+        cb_show_degree = new QCheckBox(groupBox_2);
+        cb_show_degree->setObjectName("cb_show_degree");
+        cb_show_degree->setChecked(true);
+
+        gridLayout_5->addWidget(cb_show_degree, 1, 1, 1, 1);
+
+        cb_show_text = new QCheckBox(groupBox_2);
+        cb_show_text->setObjectName("cb_show_text");
+        cb_show_text->setChecked(true);
+
+        gridLayout_5->addWidget(cb_show_text, 2, 1, 1, 1);
 
 
         verticalLayout_4->addWidget(groupBox_2);
@@ -351,6 +377,21 @@ public:
         gridLayout_4 = new QGridLayout(widget_cam_zoom);
         gridLayout_4->setObjectName("gridLayout_4");
         gridLayout_4->setContentsMargins(3, 3, 3, 3);
+        zoom_slider = new QSlider(widget_cam_zoom);
+        zoom_slider->setObjectName("zoom_slider");
+        zoom_slider->setMinimum(1);
+        zoom_slider->setMaximum(50);
+        zoom_slider->setPageStep(5);
+        zoom_slider->setOrientation(Qt::Orientation::Horizontal);
+        zoom_slider->setTickPosition(QSlider::TickPosition::TicksAbove);
+
+        gridLayout_4->addWidget(zoom_slider, 2, 0, 1, 3);
+
+        label_2 = new QLabel(widget_cam_zoom);
+        label_2->setObjectName("label_2");
+
+        gridLayout_4->addWidget(label_2, 1, 0, 1, 1);
+
         label_4 = new QLabel(widget_cam_zoom);
         label_4->setObjectName("label_4");
         label_4->setAlignment(Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter);
@@ -362,40 +403,6 @@ public:
         label_3->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
         gridLayout_4->addWidget(label_3, 1, 1, 1, 1);
-
-        horizontalLayout = new QHBoxLayout();
-        horizontalLayout->setSpacing(3);
-        horizontalLayout->setObjectName("horizontalLayout");
-        label = new QLabel(widget_cam_zoom);
-        label->setObjectName("label");
-        label->setAlignment(Qt::AlignmentFlag::AlignCenter);
-
-        horizontalLayout->addWidget(label);
-
-        l_zoom = new QLabel(widget_cam_zoom);
-        l_zoom->setObjectName("l_zoom");
-        l_zoom->setMaximumSize(QSize(16777215, 16777215));
-        l_zoom->setAlignment(Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter);
-
-        horizontalLayout->addWidget(l_zoom);
-
-
-        gridLayout_4->addLayout(horizontalLayout, 3, 1, 1, 1);
-
-        label_2 = new QLabel(widget_cam_zoom);
-        label_2->setObjectName("label_2");
-
-        gridLayout_4->addWidget(label_2, 1, 0, 1, 1);
-
-        zoom_slider = new QSlider(widget_cam_zoom);
-        zoom_slider->setObjectName("zoom_slider");
-        zoom_slider->setMinimum(1);
-        zoom_slider->setMaximum(50);
-        zoom_slider->setPageStep(5);
-        zoom_slider->setOrientation(Qt::Orientation::Horizontal);
-        zoom_slider->setTickPosition(QSlider::TickPosition::TicksAbove);
-
-        gridLayout_4->addWidget(zoom_slider, 2, 0, 1, 3);
 
 
         verticalLayout->addWidget(widget_cam_zoom);
@@ -425,7 +432,7 @@ public:
 
         retranslateUi(MainWindow);
 
-        tabWidget_2->setCurrentIndex(0);
+        widget_cam->setCurrentIndex(0);
         tabWidget->setCurrentIndex(0);
 
 
@@ -437,8 +444,8 @@ public:
         MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "MainWindow", nullptr));
         actionSettings->setText(QCoreApplication::translate("MainWindow", "Settings", nullptr));
         actionInitialize_rotator->setText(QCoreApplication::translate("MainWindow", "Initialize rotator", nullptr));
-        tabWidget_2->setTabText(tabWidget_2->indexOf(tab_3), QCoreApplication::translate("MainWindow", "RGB", nullptr));
-        tabWidget_2->setTabText(tabWidget_2->indexOf(tab_4), QCoreApplication::translate("MainWindow", "IR", nullptr));
+        widget_cam->setTabText(widget_cam->indexOf(rgb), QCoreApplication::translate("MainWindow", "RGB", nullptr));
+        widget_cam->setTabText(widget_cam->indexOf(ir), QCoreApplication::translate("MainWindow", "IR", nullptr));
         l_angle->setText(QString());
         l_fps->setText(QString());
         l_fps_4->setText(QCoreApplication::translate("MainWindow", "angle: ", nullptr));
@@ -451,12 +458,15 @@ public:
         tabWidget->setTabText(tabWidget->indexOf(tab), QCoreApplication::translate("MainWindow", "Identificated", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tab_2), QCoreApplication::translate("MainWindow", "Detected", nullptr));
         groupBox_2->setTitle(QCoreApplication::translate("MainWindow", "Visibility", nullptr));
+        cb_show_mans->setText(QCoreApplication::translate("MainWindow", "show_man", nullptr));
         cb_show_moves->setText(QCoreApplication::translate("MainWindow", "show_moves", nullptr));
         cb_show_planes->setText(QCoreApplication::translate("MainWindow", "show_planes", nullptr));
         cb_show_birds->setText(QCoreApplication::translate("MainWindow", "show_birds", nullptr));
-        cb_show_drones->setText(QCoreApplication::translate("MainWindow", "show_drones", nullptr));
-        cb_show_mans->setText(QCoreApplication::translate("MainWindow", "show_man", nullptr));
         cb_show_cars->setText(QCoreApplication::translate("MainWindow", "show_cars", nullptr));
+        cb_show_drones->setText(QCoreApplication::translate("MainWindow", "show_drones", nullptr));
+        cb_show_aim->setText(QCoreApplication::translate("MainWindow", "show aim", nullptr));
+        cb_show_degree->setText(QCoreApplication::translate("MainWindow", "show degree", nullptr));
+        cb_show_text->setText(QCoreApplication::translate("MainWindow", "show text", nullptr));
         groupBox_5->setTitle(QCoreApplication::translate("MainWindow", "Algorythm", nullptr));
         btn_follow->setText(QCoreApplication::translate("MainWindow", "follow object", nullptr));
         alg_zoom->setText(QCoreApplication::translate("MainWindow", "with zoom", nullptr));
@@ -464,11 +474,9 @@ public:
         btn_dist->setText(QCoreApplication::translate("MainWindow", "calculate distance", nullptr));
         groupBox->setTitle(QCoreApplication::translate("MainWindow", "Sender", nullptr));
         widget_cam_zoom->setTitle(QCoreApplication::translate("MainWindow", "Camera", nullptr));
+        label_2->setText(QCoreApplication::translate("MainWindow", "1", nullptr));
         label_4->setText(QCoreApplication::translate("MainWindow", "50", nullptr));
         label_3->setText(QCoreApplication::translate("MainWindow", "25", nullptr));
-        label->setText(QCoreApplication::translate("MainWindow", "Zoom:", nullptr));
-        l_zoom->setText(QCoreApplication::translate("MainWindow", "1x", nullptr));
-        label_2->setText(QCoreApplication::translate("MainWindow", "1", nullptr));
         menuMenu->setTitle(QCoreApplication::translate("MainWindow", "Menu", nullptr));
     } // retranslateUi
 
