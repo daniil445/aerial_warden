@@ -71,62 +71,62 @@ void VideoWidget::setMeta(const QJsonObject &obj)
     QJsonObject dist = obj["laser"].toObject();
     st_dist =dist["distance"].toDouble();
 
-    Detection ai_obj;
-    Global_coor ai_pos;
+    QMutexLocker locker(&m_queueMutex);
     QJsonArray ai =obj["ai"].toArray();
-    QVector<Detection> ai_objs;
-    for (const QJsonValue& var : ai)
-    { 
-        ai_obj.classname=var["class"].toInt();
+    work_with_storage(ai);
+    emit update_list();
+}
 
+void VideoWidget::work_with_storage(QJsonArray ai){
+    for (const QJsonValue& var : ai){
+        Detection ai_obj;
+        ai_obj.classname=var["class"].toInt();
         ai_obj.id=var["id"].toInt();
         ai_obj.prec=var["conf"].toDouble();
         QJsonArray rect =  var["box"].toArray();
         ai_obj.box= QRect(rect[0].toInt(), rect[1].toInt(), rect[2].toInt(), rect[3].toInt());
-
-        ai_pos.graphic_pos=ai_obj.get_center();
-        if(ptz_ang.count()>1)ai_pos.rotator_angle=QVector2D(ptz_ang[0].toDouble(),ptz_ang[1].toDouble());
-        if(pos.count()>2)ai_pos.station_pos=QVector3D(pos[0].toDouble(),pos[1].toDouble(),pos[2].toDouble());
-        if(st_ang.count()>2)ai_pos.station_angle=QVector3D(st_ang[0].toDouble(),st_ang[1].toDouble(),st_ang[2].toDouble());
-        ai_pos.distance=st_dist;
-        if(ai_obj.classname!=-1)ai_obj.set_angle_center(QPointF(ptz_ang[0].toDouble(),ptz_ang[1].toDouble()),ai_obj.get_center(),QPoint(62,36),curr_size,this->size());
-
-        ai_objs.append(ai_obj);
+        ai_obj.set_angle_center(ptz_angle,ai_obj.get_center(),QPoint(62,36),curr_size);
+        update_storage(ai_obj);
     }
+    QStringList olds;
+    foreach(QString key, m_storage_move->keys()){
+        Detection &val = (*m_storage_move)[key];
+        if(val.old>30)olds.append(key);
+        else val.old++;
+    }
+    foreach (QString key, olds)m_storage_move->remove(key);
 
-    QueuedMeta meta;
-    meta.metaId = meta_seq;
-    meta.ai_objs = ai_objs;
-    QMutexLocker locker(&m_queueMutex);
-    m_metaQueue.enqueue(meta);
-    while (m_metaQueue.size() > MAX_QUEUE) m_metaQueue.dequeue();
+    olds.clear();
+    foreach (QString key, m_storage->keys()) {
+        Detection &val = (*m_storage_move)[key];
+        if(val.old>30)olds.append(key);
+        else val.old++;
+    }
+    foreach (QString key, olds)m_storage_move->remove(key);
 }
 
+void VideoWidget::update_storage(Detection obj){
+    QMap<QString, Detection>* temp_storage =m_storage_move;
+    QSettings settings("config.ini", QSettings::IniFormat);
+    QStringList temp =settings.value("obj_name").toStringList();
+    QString name="move "+QString::number(obj.id);
+    if(obj.classname!=-1){
+        name=temp[obj.classname]+" "+QString::number(obj.id);
+        temp_storage =m_storage;
+    }
+    if(!(*temp_storage).contains(name)){
+        (*temp_storage).insert(name,obj);
+    }else{
+        (*temp_storage)[name].old=0;
+        (*temp_storage)[name].box=obj.box;
+        (*temp_storage)[name].history.append(obj.angle_center);
+        if((*temp_storage)[name].history.length()>10)(*temp_storage)[name].history.pop_back();
+    }
+}
 void VideoWidget::update_focus(Detection focus)
 {
     main_obj=focus;
 }
-
- QVector<Detection> VideoWidget::findMetaByFrameId(int frameId)
-{
-    while (!m_metaQueue.isEmpty())
-    {
-        const QueuedMeta& m = m_metaQueue.head();
-
-        if (m.metaId < frameId)
-        {
-            m_metaQueue.dequeue();
-            continue;
-        }
-        if (m.metaId == frameId)
-        {
-            return m_metaQueue.dequeue().ai_objs;
-        }
-        break;
-    }
-    return last_detection;
- }
-
 
 void VideoWidget::paintGL()
 {
@@ -141,9 +141,9 @@ void VideoWidget::paintGL()
     QImage imgToDraw = m_image;
     painter.drawImage(rect(),imgToDraw);
     paint_overlay(&painter);
-    paint_ai_objs(&painter);
+    paint_ai_objs(&painter,m_storage_move->values());
+    paint_ai_objs(&painter,m_storage->values());
 }
-
 
 void VideoWidget::paint_overlay(QPainter* painter)
 {
@@ -168,22 +168,15 @@ void VideoWidget::draw_text(QPainter * painter)
 void VideoWidget::draw_aim(QPainter * painter,QPoint aim)
 {
     painter->setPen(QPen(green_overlay, 2));
-    double x= rect().width() /2;
-    double y= rect().height()/2;
     double cross_size=50;
     painter->drawLine(QPoint(aim.x()-cross_size,aim.y()),QPoint(aim.x()+cross_size,aim.y()));
     painter->drawLine(QPoint(aim.x(),aim.y()-cross_size),QPoint(aim.x(),aim.y()+cross_size));
 }
 
-void VideoWidget::paint_ai_objs(QPainter * painter)
+void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)
 {
-    QVector<Detection> objects=findMetaByFrameId(d_frame_time);
-    if(objects.length()==0){
-        objects=last_detection;
-    }else{
-        last_detection=objects;
-    }
-    emit send_obj_list(objects);
+    if(objects.length()==0){ objects=last_detection;
+    }else{ last_detection=objects;}
     for (const Detection& det : objects)
     {
         if(det.classname==-1&& !motion_visible)continue;

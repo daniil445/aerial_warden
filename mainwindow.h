@@ -43,7 +43,7 @@ public slots:
     void update_distance(double);
     void sendMoveCommand(const QString& cmd, double speed, bool pressed);
     void sendMoveToCommand(double pos_x, double pos_y, double speed_x, double speed_y);
-    void update_list(QVector<Detection>);
+    void update_list();
 
 protected:
 //    bool eventFilter(QObject *obj, QEvent *event) override;
@@ -52,6 +52,8 @@ private slots:
     void on_btn_search_clicked(bool checked);
     void on_btn_dist_clicked(bool checked);
     void on_obj_list_itemClicked(QListWidgetItem *item);
+
+    void on_obj_list_move_itemClicked(QListWidgetItem *item);
 
 private:
     Ui::MainWindow *ui;
@@ -75,8 +77,5 @@ private:
     QString focus_name;
     int main_port;
     int meta_port;
-
-    int save_frame_count=30;
-    void work_with_list(QListWidget*,QMap <QString,Detection>*,QVector<Detection>);
 };
 #endif // MAINWINDOW_H

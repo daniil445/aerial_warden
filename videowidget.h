@@ -28,7 +28,7 @@ struct Detection
     int old = 0;
     double prec = 0.0;
     QRect box;   // координаты в исходном кадре
-    QList<QPointF> history;
+    QList<QPointF> history; // координаты центра в углах последние 10 шт
     QString get_name(){
         QStringList temp= {"Plane","Bird","Drone","Human","Car"};
         QString name="move "+QString::number(id);
@@ -41,21 +41,22 @@ struct Detection
     QPoint get_local_center(QPointF coef){
        return QPointF(box.center().x()*coef.x(),box.center().y()*coef.y()).toPoint();
     }
-    QPointF angle_center;
-    void set_angle_center(QPointF target_angle, QPoint pix_obj, QPoint fov, QSize size, QSize screen_size){
+    QPointF angle_center;// координаты центра в углах
+    void set_angle_center(QVector2D target_angle, QPoint pix_obj, QPoint fov, QSize size){
         double degPerPixelX = fov.x() / (double)size.width();
         double degPerPixelY = fov.y() / (double)size.height();
-
-//        double sx = screen_size.width()  / double(size.width());
-//        double sy = screen_size.height() / double(size.height());
 
         double dx = -pix_obj.x() + size.width()  / 2.0;
         double dy = -pix_obj.y() + size.height() / 2.0;
         double objAz = target_angle.x() + dx * degPerPixelX;
         double objEl = target_angle.y() + dy * degPerPixelY;
-        angle_center = QPointF(objAz, objEl);
-//        qDebug()<<"set_angle_center"<<target_angle<<pix_obj<<size/2<<dx<<dy<<angle_center;
+        angle_center = QPointF(objAz, objEl);// заполнение координат центра в углах
     }
+
+    bool kalman_init = false;
+
+    double x[4];      // az, el, vaz, vel
+    double P[4][4];   // ковариация
 };
 
 struct QueuedFrame
@@ -64,11 +65,11 @@ struct QueuedFrame
     QImage image;
 };
 
-struct QueuedMeta
-{
-    quint64 metaId = -1;
-    QVector<Detection> ai_objs;
-};
+// struct QueuedMeta
+// {
+//     quint64 metaId = -1;
+//     QVector<Detection> ai_objs;
+// };
 
 
 namespace Ui {
@@ -93,7 +94,7 @@ public:
     bool show_degree =true;
     bool show_text =true;
 signals:
-    void send_obj_list(QVector<Detection>);
+    void update_list();
     void update_size(QSize size);
     void set_meta_f_z(int frame, double zoom);
     void set_meta_a_p(QVector2D,QVector3D);
@@ -102,20 +103,29 @@ public slots:
     void setFrame(quint64 name,const QImage& img);
     void setMeta(const QJsonObject& obj);
     void update_focus(Detection);
+    void link_storages(QMap<QString, Detection>* move, QMap<QString, Detection>* storage)
+    {
+        m_storage = storage;
+        m_storage_move = move;
+    }
 
 protected:
     void paintGL() override;
     void initializeGL() override;
 private:
+    QMap<QString, Detection>* m_storage_move = nullptr;
+    QMap<QString, Detection>* m_storage = nullptr;
+
     QMutex m_mutex;
 
     QMutex m_queueMutex;
     int MAX_QUEUE=3;
-    QQueue<QueuedMeta> m_metaQueue;
+    // QQueue<QueuedMeta> m_metaQueue;
     QQueue<QueuedFrame> m_frameQueue;
     QImage m_image;
     quint64 d_frame_time=0;
     QSize curr_size;
+    int save_frame_count=30;
     double c_zoom=0;
 
     QVector3D st_angle=QVector3D(0,0,0);
@@ -123,7 +133,6 @@ private:
     QVector3D st_pos=QVector3D(0,0,0);
     double st_dist=-1;
 
-    QVector<Detection> findMetaByFrameId(int);
     QVector<Detection> last_detection;
     Detection main_obj;
 
@@ -131,11 +140,13 @@ private:
     QColor red_overlay=QColor(0xdd, 0, 0, 0xaa);
     QColor gray_overlay=QColor(0xdd, 0xdd, 0xdd, 0xff);
     void paint_overlay(QPainter *);
-    void paint_ai_objs(QPainter *);
+    void paint_ai_objs(QPainter *,QVector<Detection>);
     void draw_aim(QPainter *painter,QPoint);
     void draw_azimuth_scale(QPainter*, double);
     void drawPitchScale(QPainter*, double);
     void draw_text(QPainter *painter);
+    void work_with_storage(QJsonArray ai);
+    void update_storage(Detection ogj);
 };
 
 #endif // VIDEOWIDGET_H

@@ -48,7 +48,6 @@ private:
     double zoom_state=0;
     double prev_x_speed;
     double prev_y_speed;
-    double get_koef(double);
     double get_speed(double);
     QPointF get_speed(QPointF);
 
@@ -65,8 +64,13 @@ private:
     bool play_scan_y_pos=false;
     bool scan=false;
     bool idenificated=false;
+    bool data_ready=false;
     quint64 m_seq = 0;
 
     QMap<QString, Detection>* m_storage_move = nullptr;
     QMap<QString, Detection>* m_storage = nullptr;
+
+    void kalman_init(Detection &det);
+    QPointF kalman_update(Detection &det, QPointF measurement, double dt);
+    QPointF kalman_predict(const Detection &det, double future_dt);
 };

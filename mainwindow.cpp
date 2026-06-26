@@ -22,14 +22,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->cb_show_degree, &QCheckBox::toggled,[=](bool val) {ui->openGLWidget_RGB->show_degree=val;});
     connect(ui->cb_show_text, &QCheckBox::toggled,[=](bool val) {ui->openGLWidget_RGB->show_text=val;});
 
-
-
     dialog_sett= new conn_settings;
     connect(dialog_sett, &conn_settings::connect_to, this, &MainWindow::try_to_connect);
     connect(ui->actionSettings, &QAction::triggered, dialog_sett, &QWidget::show);
-//    connect(ui->actionInitialize_rotator, &QAction::triggered, sender, &CommandSender::sendCmd);
     connect(ui->actionInitialize_rotator, &QAction::triggered,[=]() {sender->sendCmd("init");});
-
 
     rtcp_receiver_RGB = new RtspReceiver(this);
     connect(rtcp_receiver_RGB, &RtspReceiver::frameReady, ui->openGLWidget_RGB, &VideoWidget::setFrame);
@@ -41,15 +37,19 @@ MainWindow::MainWindow(QWidget *parent)
     sender = new CommandSender(this);
     connect(ui->zoom_slider, &QSlider::sliderReleased, [=]() {sender->sendZoom(main_stream,ui->zoom_slider->value());});
     connect(ui->controls, &motion_controller::send_zoom,ui->zoom_slider,&QSlider::setValue);
+
     follower= new target_escort(this);
+    //// linkers
     follower->link_storages(&storage_move,&storage);
+    ui->openGLWidget_RGB->link_storages(&storage_move,&storage);
+
     connect(ui->alg_zoom, &QCheckBox::toggled, [=](bool var) {follower->follow_zoom=var;});
     connect(ui->openGLWidget_RGB, &VideoWidget::update_size,follower, &target_escort::update_size);
     connect(follower, &target_escort::move_by_object, sender, &CommandSender::sendMove);
     connect(follower,&target_escort::move_to_object,this,&MainWindow::sendMoveToCommand);
     connect(this, &MainWindow::update_focus,follower, &target_escort::update_focus);
     connect(this, &MainWindow::update_focus,ui->openGLWidget_RGB, &VideoWidget::update_focus);
-    connect(ui->openGLWidget_RGB,&VideoWidget::send_obj_list,this, &MainWindow::update_list);
+    connect(ui->openGLWidget_RGB,&VideoWidget::update_list,this, &MainWindow::update_list);
     connect(follower, &target_escort::zoom_to_object, [=](double val) {sender->sendZoom(main_stream,val);});
 
     follower->start();
@@ -170,77 +170,33 @@ void MainWindow::sendMoveToCommand(double pos_x, double pos_y, double speed_x, d
     else sender->sendMoveTo(QString("%0|%1|%2|%3").arg(pos_x).arg(pos_y).arg(speed_x).arg(speed_y));
 }
 
-void MainWindow::update_list(QVector<Detection> obj)
+void MainWindow::update_list()
 {
-    ui->widget_ai->setEnabled(obj.length()!=0);
-    QVector<Detection> moves;
-    QVector<Detection> objects;
-    foreach (Detection var, obj) {
-        if(var.classname==-1){
-            moves.append(var);
-        }else{
-            objects.append(var);
-        }
-    }
-
-    foreach (QString key, storage_move.keys()) {storage_move[key].old++;}
-    foreach (QString key, storage.keys()) {storage[key].old++;}
-//    qDebug()<<"storages"<<storage_move.keys()<< storage.keys();
-    work_with_list(ui->obj_list_move,&storage_move,moves);
-    work_with_list(ui->obj_list,&storage,objects);
-    qDebug()<<"storage main"<<storage.keys();
-}
-
-void MainWindow::work_with_list(QListWidget * visual, QMap <QString,Detection>* storage_objects, QVector<Detection> update_objects)
-{
-    QString selected;
-    QListWidgetItem* current = visual->currentItem();
-    if (current) selected = current->text();
-
-    foreach (Detection var, update_objects) {
-        QSettings settings("config.ini", QSettings::IniFormat);
-        QStringList temp =settings.value("obj_name").toStringList();
-        QString name="move "+QString::number(var.id);
-        if(var.classname!=-1) name=temp[var.classname]+" "+QString::number(var.id);
-        bool empty =visual->findItems(name, Qt::MatchContains).isEmpty();
-        if(empty){
-            visual->addItem(name);
-            storage_objects->insert(name,var);
-//            qDebug()<<"storage_objects"<<name<<storage_objects->keys();
-        }else{
-            (*storage_objects)[name].old=0;
-            (*storage_objects)[name].box=var.box;
-            (*storage_objects)[name].history.append(var.angle_center);
-            if((*storage_objects)[name].history.length()>10)(*storage_objects)[name].history.pop_back();
-//             qDebug()<<"storage_history"<<name<<(*storage_objects)[name].history;
-        }
-    }
-    for (int i = visual->count() - 1; i >= 0; --i)
+    for (int i = ui->obj_list_move->count() - 1; i >= 0; --i)
     {
-        QListWidgetItem* item = visual->item(i);
-        if(storage_objects->contains(item->text())){
-            if(storage_objects->value(item->text()).old>save_frame_count){
-                storage_objects->remove(item->text());
-                delete visual->takeItem(i);
-            }
-        }
+        QListWidgetItem* item = ui->obj_list_move->item(i);
+        if(storage_move.contains(item->text())) delete ui->obj_list_move->takeItem(i);
     }
-//    QList<QListWidgetItem*> found = visual->findItems(selected, Qt::MatchExactly);
-//    if (!found.isEmpty()){
-//        visual->setCurrentItem(found.first());
-//        emit update_storage(storage_objects->value(found.first()->text()));
-//    }else{
-//        emit update_storage(Detection{});
-//    }
 
+    for (int i = ui->obj_list->count() - 1; i >= 0; --i)
+    {
+        QListWidgetItem* item = ui->obj_list->item(i);
+        if(storage.contains(item->text())) delete ui->obj_list->takeItem(i);
+    }
 }
-
 
 
 void MainWindow::on_obj_list_itemClicked(QListWidgetItem *item)
 {
     focus_name=item->text();
     if(storage.contains(focus_name))emit update_focus(storage.value(focus_name));
+}
+
+
+void MainWindow::on_obj_list_move_itemClicked(QListWidgetItem *item)
+{
+    focus_name=item->text();
+    if(storage_move.contains(focus_name))emit update_focus(storage_move.value(focus_name));
 }
 
 
@@ -280,7 +236,5 @@ void MainWindow::on_btn_dist_clicked(bool checked)
         sender->sendCmd("stop_distance");
     }
 }
-
-
 
 
