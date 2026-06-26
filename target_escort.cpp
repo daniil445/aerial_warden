@@ -8,7 +8,6 @@ target_escort::target_escort(QObject* parent)
     objct.box=QRect(30,30,100,100);
     objct.classname=123;
     objct.id=0;
-    first.id=-1;
 }
 
 target_escort::~target_escort()
@@ -31,15 +30,9 @@ void target_escort::pause()
     idenificated=false;
 }
 
-void target_escort::link_storages(QMap<QString, Detection> * s_move, QMap<QString, Detection> * s_det)
-{
-    storage=*s_det;
-    storage_move=*s_move;
-}
-
-
 void target_escort::update_focus(Detection focus)
 {
+    qDebug()<<"update_focus"<< objct.classname<< objct.id<<objct.angle_center;
     if(focus.id!=-1){//pause();
         objct.box=focus.box;
         objct.classname=focus.classname;
@@ -48,9 +41,7 @@ void target_escort::update_focus(Detection focus)
         objct.prec=focus.prec;
         objct.box=focus.box;
     }
-//    if(objc1t.history.length()>5) objct.history.pop_front();
-//    objct.history.append(focus.get_center());
-//    qDebug()<<" objct.history"<< objct.classname<< objct.id;
+
 }
 
 void target_escort::update_size(QSize size)
@@ -64,17 +55,15 @@ void target_escort::update_speed_x_y(double x_s, double y_s)
     y_speed=y_s;
 }
 
-void target_escort::update_list(QVector<Detection> objs)
+void target_escort::update_storage()
 {
-    foreach (Detection var, objs) {
-        if(var.classname==-1){
-            if(first.id!=-1){
-                if(var.id == first.id)first.box=var.box;
-            }
-            first=var;
-            break;
-        }
+    Detection temp = m_storage->value(objct.get_name());
+    qDebug()<<"storage seckond"<<m_storage->keys()<<temp.id;
+    if(temp.id==-1)return;
+    if(objct.old!=temp.old){
+        objct.angle_center=temp.angle_center;
     }
+     qDebug()<<"algorythm update_storage"<<temp.angle_center;
 }
 
 void target_escort::update_meta_pos(QVector2D ang, QVector3D pos)
@@ -102,18 +91,6 @@ void target_escort::run()
                 emit move_to_object(0,0,0,y_speed);
                 emit move_by_object(QString("%0|%1").arg(x_speed).arg(0));
                 qDebug()<<"algorythm searched";
-            }
-            if(first.id!=-1){
-                follow(first);
-                emit zoom_to_object(zoom_state+1);
-                qDebug()<<"algorythm detected";
-                if(idenificated){
-                    qDebug()<<"algorythm idenificated";
-                    emit zoom_to_object(zoom_state-1);
-                }
-            }else{
-                emit move_to_object(0,0,0,0);
-//                emit zoom_to_object(0);
             }
         }
         msleep(1000);
@@ -185,18 +162,19 @@ QPointF target_escort::get_speed(QPointF percents)
     return speeds;
 }
 
-void target_escort::follow(Detection target)
+void target_escort::follow(Detection targe)
 {
-    qDebug()<<"algorythm follow"<<target.id;
-    double x= (-image_size.width() /2+target.get_center().x())/image_size.toSizeF().width();
-    double y= (-image_size.height()/2+target.get_center().y())/image_size.toSizeF().height();
+    update_storage();
+    double x= (-image_size.width() /2+objct.get_center().x())/image_size.toSizeF().width();
+    double y= (-image_size.height()/2+objct.get_center().y())/image_size.toSizeF().height();
     offset=QPointF(x,y);
     if(speed!=get_speed(offset)){
         speed=get_speed(offset);
-        qDebug()<<"algorythm speed"<<offset<<get_speed(offset);
-        emit move_by_object(QString("%0|%1").arg(get_speed(offset).x()).arg(get_speed(offset).y()));
+        qDebug()<<"algorythm pos"<<objct.angle_center;
+//        emit move_by_object(QString("%0|%1").arg(get_speed(offset).x()).arg(get_speed(offset).y()));
+//        emit move_to_object(target.angle_center.x(),target.angle_center.y(),5,5);
     }
-    if(follow_zoom)follow_by_zoom(target);
+    if(follow_zoom)follow_by_zoom(objct);
 
     QThread::msleep(10);
 }

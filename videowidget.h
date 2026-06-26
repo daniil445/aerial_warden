@@ -29,23 +29,32 @@ struct Detection
     double prec = 0.0;
     QRect box;   // координаты в исходном кадре
     QList<QPointF> history;
+    QString get_name(){
+        QStringList temp= {"Plane","Bird","Drone","Human","Car"};
+        QString name="move "+QString::number(id);
+        if(classname!=-1) name=temp[classname]+" "+QString::number(id);
+       return name;
+    }
     QPoint get_center(){
        return box.center();
+    }
+    QPoint get_local_center(QPointF coef){
+       return QPointF(box.center().x()*coef.x(),box.center().y()*coef.y()).toPoint();
     }
     QPointF angle_center;
     void set_angle_center(QPointF target_angle, QPoint pix_obj, QPoint fov, QSize size, QSize screen_size){
         double degPerPixelX = fov.x() / (double)size.width();
         double degPerPixelY = fov.y() / (double)size.height();
 
-        double sx = screen_size.width()  / double(size.width());
-        double sy = screen_size.height() / double(size.height());
+//        double sx = screen_size.width()  / double(size.width());
+//        double sy = screen_size.height() / double(size.height());
 
-        double dx = pix_obj.x()*sx - size.width()  / 2.0;
-        double dy = pix_obj.y()*sy - size.height() / 2.0;
+        double dx = -pix_obj.x() + size.width()  / 2.0;
+        double dy = -pix_obj.y() + size.height() / 2.0;
         double objAz = target_angle.x() + dx * degPerPixelX;
         double objEl = target_angle.y() + dy * degPerPixelY;
         angle_center = QPointF(objAz, objEl);
-        qDebug()<<"set_angle_center"<<target_angle<<pix_obj<<dx<<dy<<angle_center;
+//        qDebug()<<"set_angle_center"<<target_angle<<pix_obj<<size/2<<dx<<dy<<angle_center;
     }
 };
 
@@ -120,6 +129,7 @@ private:
 
     QColor green_overlay=QColor(0, 0xdd, 0, 0xaa);
     QColor red_overlay=QColor(0xdd, 0, 0, 0xaa);
+    QColor gray_overlay=QColor(0xdd, 0xdd, 0xdd, 0xff);
     void paint_overlay(QPainter *);
     void paint_ai_objs(QPainter *);
     void draw_aim(QPainter *painter,QPoint);

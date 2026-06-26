@@ -33,11 +33,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     rtcp_receiver_RGB = new RtspReceiver(this);
     connect(rtcp_receiver_RGB, &RtspReceiver::frameReady, ui->openGLWidget_RGB, &VideoWidget::setFrame);
-    connect(ui->openGLWidget_RGB,&VideoWidget::send_obj_list,this, &MainWindow::update_list_RGB);
 
     rtcp_receiver_IR = new RtspReceiver(this);
     connect(rtcp_receiver_IR, &RtspReceiver::frameReady, ui->openGLWidget_IR, &VideoWidget::setFrame);
-    connect(ui->openGLWidget_IR,&VideoWidget::send_obj_list,this, &MainWindow::update_list_IR);
 
 
     sender = new CommandSender(this);
@@ -51,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(follower,&target_escort::move_to_object,this,&MainWindow::sendMoveToCommand);
     connect(this, &MainWindow::update_focus,follower, &target_escort::update_focus);
     connect(this, &MainWindow::update_focus,ui->openGLWidget_RGB, &VideoWidget::update_focus);
-    connect(ui->openGLWidget_RGB,&VideoWidget::send_obj_list,follower, &target_escort::update_list);
+    connect(ui->openGLWidget_RGB,&VideoWidget::send_obj_list,this, &MainWindow::update_list);
     connect(follower, &target_escort::zoom_to_object, [=](double val) {sender->sendZoom(main_stream,val);});
 
     follower->start();
@@ -190,6 +188,7 @@ void MainWindow::update_list(QVector<Detection> obj)
 //    qDebug()<<"storages"<<storage_move.keys()<< storage.keys();
     work_with_list(ui->obj_list_move,&storage_move,moves);
     work_with_list(ui->obj_list,&storage,objects);
+    qDebug()<<"storage main"<<storage.keys();
 }
 
 void MainWindow::work_with_list(QListWidget * visual, QMap <QString,Detection>* storage_objects, QVector<Detection> update_objects)
@@ -226,22 +225,13 @@ void MainWindow::work_with_list(QListWidget * visual, QMap <QString,Detection>* 
             }
         }
     }
-    QList<QListWidgetItem*> found = visual->findItems(selected, Qt::MatchExactly);
-    if (!found.isEmpty()){
-        visual->setCurrentItem(found.first());
-        emit update_focus(storage_objects->value(found.first()->text()));
-    }else{
-        emit update_focus(Detection{});
-    }
-}
-
-void MainWindow::update_list_RGB(QVector<Detection> list)
-{
-    update_list(list);
-}
-
-void MainWindow::update_list_IR(QVector<Detection> list)
-{
+//    QList<QListWidgetItem*> found = visual->findItems(selected, Qt::MatchExactly);
+//    if (!found.isEmpty()){
+//        visual->setCurrentItem(found.first());
+//        emit update_storage(storage_objects->value(found.first()->text()));
+//    }else{
+//        emit update_storage(Detection{});
+//    }
 
 }
 

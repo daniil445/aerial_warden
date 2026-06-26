@@ -33,6 +33,7 @@ signals:
     void send_mess(QJsonObject& obj);
     void moveCommand(QString cmd, bool pressed);
     void update_focus(Detection focus);
+    void update_storage(Detection stored);
     void show_movement(bool);
     void update_zoom(double);
 public slots:
@@ -43,8 +44,6 @@ public slots:
     void sendMoveCommand(const QString& cmd, double speed, bool pressed);
     void sendMoveToCommand(double pos_x, double pos_y, double speed_x, double speed_y);
     void update_list(QVector<Detection>);
-    void update_list_RGB(QVector<Detection>);
-    void update_list_IR(QVector<Detection>);
 
 protected:
 //    bool eventFilter(QObject *obj, QEvent *event) override;

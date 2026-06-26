@@ -16,7 +16,11 @@ public:
     QString scenario = "";
     void stop();
     void pause();
-    void link_storages(QMap <QString,Detection>*,QMap <QString,Detection>*);
+    void link_storages(QMap<QString, Detection>* move, QMap<QString, Detection>* storage)
+    {
+        m_storage = storage;
+        m_storage_move = move;
+    }
 
 signals:
     void move_by_object(QString speeds);
@@ -27,7 +31,7 @@ public slots:
     void update_focus(Detection focus);
     void update_size(QSize size);
     void update_speed_x_y(double,double);
-    void update_list(QVector<Detection>);
+    void update_storage();
     void update_meta_pos(QVector2D,QVector3D);
     void update_meta(int frame, double zoom);
 
@@ -62,8 +66,7 @@ private:
     bool scan=false;
     bool idenificated=false;
     quint64 m_seq = 0;
-    Detection first;
 
-    QMap <QString,Detection> storage;
-    QMap <QString,Detection> storage_move;
+    QMap<QString, Detection>* m_storage_move = nullptr;
+    QMap<QString, Detection>* m_storage = nullptr;
 };

@@ -74,8 +74,6 @@ void VideoWidget::setMeta(const QJsonObject &obj)
     Detection ai_obj;
     Global_coor ai_pos;
     QJsonArray ai =obj["ai"].toArray();
-    double sx = width()  / double(m_image.width());
-    double sy = height() / double(m_image.height());
     QVector<Detection> ai_objs;
     for (const QJsonValue& var : ai)
     { 
@@ -84,8 +82,7 @@ void VideoWidget::setMeta(const QJsonObject &obj)
         ai_obj.id=var["id"].toInt();
         ai_obj.prec=var["conf"].toDouble();
         QJsonArray rect =  var["box"].toArray();
-        QRect r(rect[0].toInt()*sx, rect[1].toInt()*sy, rect[2].toInt()*sx, rect[3].toInt()*sy);
-        ai_obj.box=r;
+        ai_obj.box= QRect(rect[0].toInt(), rect[1].toInt(), rect[2].toInt(), rect[3].toInt());
 
         ai_pos.graphic_pos=ai_obj.get_center();
         if(ptz_ang.count()>1)ai_pos.rotator_angle=QVector2D(ptz_ang[0].toDouble(),ptz_ang[1].toDouble());
@@ -206,19 +203,22 @@ void VideoWidget::paint_ai_objs(QPainter * painter)
         else if(det.classname==-1)color=Qt::yellow;
         else color=Qt::gray;
         double pen_size=1;
+        double sx = width()  / double(m_image.width());
+        double sy = height() / double(m_image.height());
         if(det.classname==main_obj.classname && det.id==main_obj.id){
             pen_size=4;
-            draw_aim(painter,main_obj.get_center());
+            draw_aim(painter,main_obj.get_local_center(QPointF(sx,sy)));
         }
         painter->setPen(QPen(color,pen_size));
-        painter->drawRect(r);
+
+        painter->drawRect(QRect (r.topLeft().x()*sx, r.topLeft().y()*sy, r.width()*sx, r.height()*sy));
 
         QSettings settings("config.ini", QSettings::IniFormat);
         QStringList temp =settings.value("obj_name").toStringList();
         QString label = QString("%1 %2 (p:%3)").arg(det.classname==-1?"move":temp.value(det.classname)).arg(det.id).arg(det.prec, 0, 'f', 2);
         QFontMetrics fm = painter->fontMetrics();
         int textHeight = fm.height();
-        painter->drawText(r.bottomLeft() + QPoint(0, textHeight), label);
+        painter->drawText(QPointF(r.bottomLeft().x()*sx,r.bottomLeft().y()*sy) + QPoint(0, textHeight), label);
     }
 }
 
@@ -265,7 +265,15 @@ void VideoWidget::draw_azimuth_scale( QPainter* painter, double headingDeg)
     }
     painter->setPen(QPen(red_overlay, 3));
     painter->drawLine(centerX, y - 10, centerX, y + 15);
-    painter->drawText(centerX - 8, y - 15, QString("%1°").arg(headingDeg, 0, 'f', 1));
+    painter->setPen(QPen(gray_overlay, 3));
+    double absAngle = std::abs(headingDeg);
+    int deg = static_cast<int>(absAngle);
+    double min_full = (absAngle - deg) * 60.0;
+    int min = static_cast<int>(min_full);
+    double sec = (min_full - min) * 60.0;
+
+    if (headingDeg < 0) deg = -deg;
+    painter->drawText(centerX - 46, y - 15, QString("%1° %2' %3''").arg(headingDeg, 3, 'd', 0).arg(min_full, 2, 'd', 0).arg(sec, 2, 'd', 0));
 }
 
 void VideoWidget::drawPitchScale(QPainter* painter, double pitchDeg)
@@ -295,7 +303,16 @@ void VideoWidget::drawPitchScale(QPainter* painter, double pitchDeg)
     }
     painter->setPen(QPen(red_overlay, 3));
     painter->drawLine( x - 15, centerY, x + 10, centerY);
-    painter->drawText( x - 60, centerY +5, QString("%1°").arg(pitchDeg, 0, 'f', 1)
-    );
+    painter->setPen(QPen(gray_overlay, 3));
+    double absAngle = std::abs(pitchDeg);
+    int deg = static_cast<int>(absAngle);
+    double min_full = (absAngle - deg) * 60.0;
+    int min = static_cast<int>(min_full);
+    double sec = (min_full - min) * 60.0;
+
+    if (pitchDeg < 0) deg = -deg;
+    painter->drawText( x + 10, centerY -15,  QString("%1°").arg(pitchDeg, 3, 'd', 0));
+    painter->drawText( x + 10, centerY +5, QString("%1'").arg(min_full, 3, 'd', 0));
+    painter->drawText( x + 10, centerY +25, QString("%1''").arg(sec, 3, 'd', 0));
 }
 
