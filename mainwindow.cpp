@@ -34,7 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     sender = new CommandSender(this);
-    connect(ui->zoom_slider, &QSlider::sliderReleased, [=]() {sender->sendZoom(main_stream,ui->zoom_slider->value());});
+    connect(ui->zoom_slider, &QSlider::sliderReleased, [=]() {sender->sendZoom(main_stream,zoom_human_to_camera(ui->zoom_slider->value()));});
     connect(ui->controls, &motion_controller::send_zoom,ui->zoom_slider,&QSlider::setValue);
 
     follower= new target_escort(this);
@@ -114,6 +114,8 @@ void MainWindow::try_to_connect(QStringList url_cam_rgb,QStringList url_cam_ir,Q
 void MainWindow::update_meta(int frame, double zoom)
 {
     ui->l_fps->setText(QString::number(frame/100000.0,'d',3));
+    qDebug()<<"ui zoom"<<zoom<<ui->zoom_slider->value()<<abs(zoom -ui->zoom_slider->value());
+    if(abs(zoom -ui->zoom_slider->value())>0.1 && !ui->zoom_slider->hasFocus())ui->zoom_slider->setValue((int)zoom);
     // ui->l_zoom->setText(QString::number(zoom,'d',3));
     ui->widget_cam_zoom->setEnabled(zoom!=0);
     ui->actionInitialize_rotator->setEnabled(zoom!=0);
@@ -184,8 +186,8 @@ void MainWindow::update_list()
     }
 
     if(ui->obj_list->findItems(focus_name, Qt::MatchExactly).length()==0){
-        ui->btn_follow->setEnabled(false);
-        ui->btn_follow->clicked(false);
+//        ui->btn_follow->setEnabled(false);
+//        ui->btn_follow->clicked(false);
 //        on_btn_follow_clicked(false);
     }
 }

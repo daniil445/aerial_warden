@@ -21,12 +21,12 @@ public:
         main_ip=addr;
         main_port=port;
     }
-    void sendZoom(QString cmd,int value)
+    void sendZoom(QString cmd,double value)
     {
         QJsonObject obj;
         obj["source"] = "user";
         obj["cmd"] = cmd;
-        obj["value"] = value;
+        obj["value"] =value;
         QJsonDocument doc(obj);
         QByteArray data = doc.toJson(QJsonDocument::Compact);
         socket->writeDatagram(data, QHostAddress(main_ip), main_port);

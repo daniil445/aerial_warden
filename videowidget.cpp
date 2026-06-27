@@ -44,16 +44,12 @@ QImage VideoWidget::findFrameById(int frameId)
     while (!m_frameQueue.isEmpty())
     {
         const QueuedFrame& m = m_frameQueue.head();
-
-        if (m.frameId < frameId)
-        {
+        if (m.frameId < frameId) {
             m_frameQueue.dequeue();
             continue;
         }
         if (m.frameId == frameId)
-        {
             return m_frameQueue.dequeue().image;
-        }
         break;
     }
     return m_image;

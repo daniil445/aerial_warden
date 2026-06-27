@@ -154,7 +154,7 @@ void target_escort::follow()
        // emit move_to_object(future.x(),future.y(),5,5);
 
 //    if(!moving){
-        emit move_to_object(temp.angle_center.x(),temp.angle_center.y(),5,5);
+        emit move_to_object(temp.angle_center_projective.x(),temp.angle_center_projective.y(),5,5);
 //        moving=true;
 //    }else{
 //         qDebug()<<"algorythm euals"<<temp.angle_center.toPoint()<<global_ang.toPoint();
