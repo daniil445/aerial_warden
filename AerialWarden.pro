@@ -23,6 +23,7 @@ HEADERS += \
     UDPReceiver.h \
     UDPSender.h \
     conn_settings.h \
+    func_and_structure.h \
     mainwindow.h \
     motion_controller/PtzControlWidget.h \
     motion_controller/motion_controller.h \

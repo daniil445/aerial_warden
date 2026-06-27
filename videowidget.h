@@ -1,6 +1,4 @@
-#ifndef VIDEOWIDGET_H
-#define VIDEOWIDGET_H
-
+#pragma once
 #include <QWidget>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
@@ -10,67 +8,7 @@
 #include <QQueue>
 #include <QVector3D>
 #include <QVector2D>
-
-struct Global_coor
-{
-    QPointF graphic_pos;
-    QVector3D station_pos;
-    QVector3D station_angle;
-    QVector2D rotator_angle;
-    double distance;
-};
-
-
-struct Detection
-{
-    int classname;
-    int id = -1;
-    int old = 0;
-    double prec = 0.0;
-    QRect box;   // координаты в исходном кадре
-    QList<QPointF> history; // координаты центра в углах последние 10 шт
-    QString get_name(){
-        QStringList temp= {"Plane","Bird","Drone","Human","Car"};
-        QString name="move "+QString::number(id);
-        if(classname!=-1) name=temp[classname]+" "+QString::number(id);
-       return name;
-    }
-    QPoint get_center(){
-       return box.center();
-    }
-    QPoint get_local_center(QPointF coef){
-       return QPointF(box.center().x()*coef.x(),box.center().y()*coef.y()).toPoint();
-    }
-    QPointF angle_center;// координаты центра в углах
-    void set_angle_center(QVector2D target_angle, QPoint pix_obj, QPoint fov, QSize size){
-        double degPerPixelX = fov.x() / (double)size.width();
-        double degPerPixelY = fov.y() / (double)size.height();
-
-        double dx = -pix_obj.x() + size.width()  / 2.0;
-        double dy = -pix_obj.y() + size.height() / 2.0;
-        double objAz = target_angle.x() + dx * degPerPixelX;
-        double objEl = target_angle.y() + dy * degPerPixelY;
-        angle_center = QPointF(objAz, objEl);// заполнение координат центра в углах
-    }
-
-    bool kalman_init = false;
-
-    double x[4];      // az, el, vaz, vel
-    double P[4][4];   // ковариация
-};
-
-struct QueuedFrame
-{
-    quint64 frameId = -1;
-    QImage image;
-};
-
-// struct QueuedMeta
-// {
-//     quint64 metaId = -1;
-//     QVector<Detection> ai_objs;
-// };
-
+#include "func_and_structure.h"
 
 namespace Ui {
 class VideoWidget;
@@ -124,9 +62,11 @@ private:
     QQueue<QueuedFrame> m_frameQueue;
     QImage m_image;
     quint64 d_frame_time=0;
+    quint64 m_frame_time=0;
     QSize curr_size;
     int save_frame_count=30;
-    double c_zoom=0;
+    double raw_zoom=0;
+    double human_zoom=0;
 
     QVector3D st_angle=QVector3D(0,0,0);
     QVector2D ptz_angle=QVector2D(0,0);
@@ -141,12 +81,10 @@ private:
     QColor gray_overlay=QColor(0xdd, 0xdd, 0xdd, 0xff);
     void paint_overlay(QPainter *);
     void paint_ai_objs(QPainter *,QVector<Detection>);
-    void draw_aim(QPainter *painter,QPoint);
+    void draw_aim(QPainter *painter,QPoint,QColor col=QColor(0, 0xdd, 0, 0xaa));
     void draw_azimuth_scale(QPainter*, double);
     void drawPitchScale(QPainter*, double);
     void draw_text(QPainter *painter);
     void work_with_storage(QJsonArray ai);
     void update_storage(Detection ogj);
 };
-
-#endif // VIDEOWIDGET_H

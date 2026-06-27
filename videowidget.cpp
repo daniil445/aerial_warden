@@ -41,11 +41,13 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
 
 void VideoWidget::setMeta(const QJsonObject &obj)
 {
-//    qDebug()<<"meta"<<obj;
+    qDebug()<<"meta"<<obj;
     QJsonObject camera =obj["rgb"].toObject();
-    quint32 meta_seq = camera["ts"].toInteger();
-    c_zoom=camera["zoom"].toDouble();
+    m_frame_time = camera["ts"].toInteger();
 
+    raw_zoom=camera["zoom"].toDouble();
+    human_zoom=zoom_camera_to_human(raw_zoom);
+    qDebug()<<"zooms"<<raw_zoom<<human_zoom<<zoom_human_to_camera(human_zoom);
     QJsonObject station =obj["st"].toObject();
 
     QJsonArray st_ang=station["gyro"].toArray();
@@ -85,7 +87,7 @@ void VideoWidget::work_with_storage(QJsonArray ai){
         ai_obj.prec=var["conf"].toDouble();
         QJsonArray rect =  var["box"].toArray();
         ai_obj.box= QRect(rect[0].toInt(), rect[1].toInt(), rect[2].toInt(), rect[3].toInt());
-        ai_obj.set_angle_center(ptz_angle,ai_obj.get_center(),QPoint(62,36),curr_size);
+        if(ai_obj.classname!=-1)ai_obj.set_angle_center(ptz_angle,ai_obj.get_center(),QPoint(62,36),curr_size);
         update_storage(ai_obj);
     }
     QStringList olds;
@@ -98,11 +100,11 @@ void VideoWidget::work_with_storage(QJsonArray ai){
 
     olds.clear();
     foreach (QString key, m_storage->keys()) {
-        Detection &val = (*m_storage_move)[key];
+        Detection &val = (*m_storage)[key];
         if(val.old>30)olds.append(key);
         else val.old++;
     }
-    foreach (QString key, olds)m_storage_move->remove(key);
+    foreach (QString key, olds)m_storage->remove(key);
 }
 
 void VideoWidget::update_storage(Detection obj){
@@ -119,8 +121,7 @@ void VideoWidget::update_storage(Detection obj){
     }else{
         (*temp_storage)[name].old=0;
         (*temp_storage)[name].box=obj.box;
-        (*temp_storage)[name].history.append(obj.angle_center);
-        if((*temp_storage)[name].history.length()>10)(*temp_storage)[name].history.pop_back();
+        (*temp_storage)[name].angle_center=obj.angle_center;
     }
 }
 void VideoWidget::update_focus(Detection focus)
@@ -134,11 +135,11 @@ void VideoWidget::paintGL()
     QPainter painter(this);
     QMutexLocker lock(&m_mutex);
 
-    emit set_meta_f_z(d_frame_time,c_zoom);
+    emit set_meta_f_z(d_frame_time,human_zoom);
     emit set_meta_a_p(ptz_angle,st_pos);
     emit set_meta_d(st_dist);
-
-    QImage imgToDraw = m_image;
+m_frameQueue.
+    QImage imgToDraw = m_frame_time m_image;
     painter.drawImage(rect(),imgToDraw);
     paint_overlay(&painter);
     paint_ai_objs(&painter,m_storage_move->values());
@@ -161,13 +162,13 @@ void VideoWidget::draw_text(QPainter * painter)
     font.setStyleHint(QFont::Monospace);
     painter->setFont(font);
     painter->setPen(QPen(green_overlay, 2));
-    painter->drawText(10, 30, QString("ZOOM :%1 x").arg(c_zoom  , 4, 'f', 1));
-    painter->drawText(10, 50, QString("FOCUS:%1 mm").arg(c_zoom*6, 4, 'f', 1));
+    painter->drawText(10, 30, QString("ZOOM :%1 x").arg(human_zoom  , 4, 'f', 1));
+    painter->drawText(10, 50, QString("FOCUS:%1 mm").arg(human_zoom*6, 4, 'f', 1));
 }
 
-void VideoWidget::draw_aim(QPainter * painter,QPoint aim)
+void VideoWidget::draw_aim(QPainter * painter,QPoint aim, QColor color)
 {
-    painter->setPen(QPen(green_overlay, 2));
+    painter->setPen(QPen(color, 2));
     double cross_size=50;
     painter->drawLine(QPoint(aim.x()-cross_size,aim.y()),QPoint(aim.x()+cross_size,aim.y()));
     painter->drawLine(QPoint(aim.x(),aim.y()-cross_size),QPoint(aim.x(),aim.y()+cross_size));
@@ -185,6 +186,7 @@ void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)
         if(det.classname==2 && !motion_drones)continue;
         if(det.classname==3 && !motion_cars)continue;
         if(det.classname==4 && !motion_mans)continue;
+        if(det.old>2)continue;
 
         QRect r(int(det.box.x()),int(det.box.y()),int(det.box.width()),int(det.box.height()) );
         QColor color;
@@ -200,7 +202,14 @@ void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)
         double sy = height() / double(m_image.height());
         if(det.classname==main_obj.classname && det.id==main_obj.id){
             pen_size=4;
-            draw_aim(painter,main_obj.get_local_center(QPointF(sx,sy)));
+            Detection& temp = (*m_storage)[main_obj.get_name()];
+            draw_aim(painter,temp.get_local_center(QPointF(sx,sy)));
+            if(temp.kalman_init)kalman_init(temp);
+            QPointF filtered = kalman_update(temp,  temp.angle_center, 1.0/30.0);
+            QPointF tempo= temp.get_global_to_local_center(temp.angle_center,ptz_angle,getFOV(raw_zoom),curr_size);
+
+            draw_aim(painter,QPoint(tempo.x()*sx,tempo.y()*sy),red_overlay);
+            qDebug()<<temp.get_name()<<"filtered"<<filtered<<temp.angle_center;
         }
         painter->setPen(QPen(color,pen_size));
 

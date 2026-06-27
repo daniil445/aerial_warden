@@ -1,8 +1,8 @@
-#include "VideoWidget.h"
+#pragma once
+
+#include "func_and_structure.h"
 #include <QThread>
 #include <QObject>
-
-#pragma once
 
 class target_escort: public QThread
 {
@@ -45,6 +45,7 @@ private:
     double y_speed=0;
     double global_x_ang=0;
     double global_y_ang=0;
+    QPointF global_ang;
     double zoom_state=0;
     double prev_x_speed;
     double prev_y_speed;
@@ -54,7 +55,7 @@ private:
     QPointF speed;
     int zoom_target;
 
-    void follow(Detection);
+    void follow();
     void follow_by_zoom(Detection);
     void play_test();
 
@@ -65,12 +66,9 @@ private:
     bool scan=false;
     bool idenificated=false;
     bool data_ready=false;
+    bool moving=false;
     quint64 m_seq = 0;
 
     QMap<QString, Detection>* m_storage_move = nullptr;
-    QMap<QString, Detection>* m_storage = nullptr;
-
-    void kalman_init(Detection &det);
-    QPointF kalman_update(Detection &det, QPointF measurement, double dt);
-    QPointF kalman_predict(const Detection &det, double future_dt);
+    QMap<QString, Detection>* m_storage = nullptr;   
 };

@@ -1,19 +1,17 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#pragma once
 
 #include "UDPSender.h"
 #include "UDPReceiver.h"
-#include "target_escort.h"
-
-#include <QMainWindow>
-#include <RtspReceiver.h>
-
-#include <VideoWidget.h>
-#include <conn_settings.h>
-
 #include <QKeyEvent>
 #include <QListWidget>
 #include <QSettings>
+
+
+#include <QMainWindow>
+#include <RtspReceiver.h>
+#include <target_escort.h>
+#include <conn_settings.h>
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -46,7 +44,6 @@ public slots:
     void update_list();
 
 protected:
-//    bool eventFilter(QObject *obj, QEvent *event) override;
 private slots:
     void on_btn_follow_clicked(bool checked);
     void on_btn_search_clicked(bool checked);
@@ -59,7 +56,6 @@ private:
     Ui::MainWindow *ui;
 
     conn_settings* dialog_sett;
-    VideoWidget* videoWidget; 
     RtspReceiver* rtcp_receiver_RGB;
     RtspReceiver* rtcp_receiver_IR;
     CommandReceiver* UDP_receiver;
@@ -78,4 +74,3 @@ private:
     int main_port;
     int meta_port;
 };
-#endif // MAINWINDOW_H

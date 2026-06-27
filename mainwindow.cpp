@@ -4,7 +4,6 @@
 #include <QJsonArray>
 #include <QSettings>
 #include <RtspReceiver.h>
-#include <VideoWidget.h>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -92,17 +91,6 @@ MainWindow::~MainWindow()
     follower->wait();
     delete ui;
 }
-//bool MainWindow::eventFilter(QObject *obj, QEvent *event)
-//{
-//    if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease )
-//    {
-//        qDebug()<<"eventFilter"<<event->type();
-////        QCoreApplication::sendEvent(ui->controls, event);
-//        return true;
-//    }
-//    return QObject::eventFilter(obj, event);
-//}
-
 
 void MainWindow::try_to_connect(QStringList url_cam_rgb,QStringList url_cam_ir,QStringList url_main)
 {
@@ -172,16 +160,33 @@ void MainWindow::sendMoveToCommand(double pos_x, double pos_y, double speed_x, d
 
 void MainWindow::update_list()
 {
+    foreach(QString key, storage_move.keys()){
+        QList<QListWidgetItem*> items = ui->obj_list_move->findItems(key, Qt::MatchExactly);
+        if (items.isEmpty())  ui->obj_list_move->addItem(key);
+    }
+
+    foreach(QString key, storage.keys()){
+        QList<QListWidgetItem*> items = ui->obj_list->findItems(key, Qt::MatchExactly);
+        if (items.isEmpty())  ui->obj_list->addItem(key);
+    }
+
+
     for (int i = ui->obj_list_move->count() - 1; i >= 0; --i)
     {
         QListWidgetItem* item = ui->obj_list_move->item(i);
-        if(storage_move.contains(item->text())) delete ui->obj_list_move->takeItem(i);
+        if(!storage_move.contains(item->text())) delete ui->obj_list_move->takeItem(i);
     }
 
     for (int i = ui->obj_list->count() - 1; i >= 0; --i)
     {
         QListWidgetItem* item = ui->obj_list->item(i);
-        if(storage.contains(item->text())) delete ui->obj_list->takeItem(i);
+        if(!storage.contains(item->text())) delete ui->obj_list->takeItem(i);
+    }
+
+    if(ui->obj_list->findItems(focus_name, Qt::MatchExactly).length()==0){
+        ui->btn_follow->setEnabled(false);
+        ui->btn_follow->clicked(false);
+//        on_btn_follow_clicked(false);
     }
 }
 
@@ -189,6 +194,7 @@ void MainWindow::update_list()
 void MainWindow::on_obj_list_itemClicked(QListWidgetItem *item)
 {
     focus_name=item->text();
+    ui->btn_follow->setEnabled(true);
     if(storage.contains(focus_name))emit update_focus(storage.value(focus_name));
 }
 
@@ -196,18 +202,22 @@ void MainWindow::on_obj_list_itemClicked(QListWidgetItem *item)
 void MainWindow::on_obj_list_move_itemClicked(QListWidgetItem *item)
 {
     focus_name=item->text();
+    ui->btn_follow->setEnabled(true);
     if(storage_move.contains(focus_name))emit update_focus(storage_move.value(focus_name));
 }
 
 
 void MainWindow::on_btn_follow_clicked(bool checked)
 {
+    if(focus_name==""){
+        return;
+    }
     if(checked){
         ui->btn_follow->setText("unfollow object");
         follower->scenario="follow";
     }else{
         ui->btn_follow->setText("follow object");
-        sender->sendCmd("stop");
+//        sender->sendCmd("stop");
         follower->scenario="";
     }
 }
@@ -219,7 +229,7 @@ void MainWindow::on_btn_search_clicked(bool checked)
         follower->scenario="search";
     }else{
         ui->btn_search->setText("search objects");
-        sender->sendCmd("stop");
+//        sender->sendCmd("stop");
         follower->scenario="";
         follower->pause();
     }
