@@ -99,6 +99,7 @@ struct Detection
     }
 
     QPointF angle_center;// координаты центра в углах
+    QPointF angle_center_projective;
     QPoint get_global_to_local_center(QPointF global_coors, QVector2D camera_angle,QPointF fov, QSize image_size){
         double degPerPixelX =fov.x()/(double)image_size.width();
         double degPerPixelY = fov.y()/(double)image_size.height();
@@ -109,8 +110,15 @@ struct Detection
         //        qDebug()<<"get_global_to_local_center"<<get_name()<<image_size/2<<dx<<dy<<px<<py;
         return QPoint(px,py);
     }
-
-    void set_angle_center(QVector2D global_coors, QPoint pix_obj, QPoint fov, QSize size){
+    void set_angle_center_projective(QVector2D camera_angle, QPoint pix_obj,QSize size,QPointF fov){
+        double nx =(pix_obj.x() - size.width()/2.0)/ (size.width()/2.0);
+        double ny =(pix_obj.y() - size.height()/2.0)/ (size.height()/2.0);
+        double dAz =qRadiansToDegrees(atan(nx * tan(qDegreesToRadians(fov.x()/2))));
+        double dEl = qRadiansToDegrees(atan(ny * tan(qDegreesToRadians(fov.y()/2))));
+        angle_center_projective.setX(camera_angle.x() + dAz);
+        angle_center_projective.setY(camera_angle.y() + dEl);
+    }
+    void set_angle_center(QVector2D global_coors, QPoint pix_obj, QPointF fov, QSize size){
         //        double degPerPixelX = fov.x() / (double)size.width();
         //        double degPerPixelY = fov.y() / (double)size.height();
 

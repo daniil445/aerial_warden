@@ -1,7 +1,7 @@
 #include "videowidget.h"
 #include <QJsonArray>
 #include <QJsonObject>
-#include <QPainter>
+
 #include <QSettings>
 
 VideoWidget::VideoWidget(QWidget *parent)
@@ -38,6 +38,27 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
         update();
     }
 }
+
+QImage VideoWidget::findFrameById(int frameId)
+{
+    while (!m_frameQueue.isEmpty())
+    {
+        const QueuedFrame& m = m_frameQueue.head();
+
+        if (m.frameId < frameId)
+        {
+            m_frameQueue.dequeue();
+            continue;
+        }
+        if (m.frameId == frameId)
+        {
+            return m_frameQueue.dequeue().image;
+        }
+        break;
+    }
+    return m_image;
+}
+
 
 void VideoWidget::setMeta(const QJsonObject &obj)
 {
@@ -87,7 +108,10 @@ void VideoWidget::work_with_storage(QJsonArray ai){
         ai_obj.prec=var["conf"].toDouble();
         QJsonArray rect =  var["box"].toArray();
         ai_obj.box= QRect(rect[0].toInt(), rect[1].toInt(), rect[2].toInt(), rect[3].toInt());
-        if(ai_obj.classname!=-1)ai_obj.set_angle_center(ptz_angle,ai_obj.get_center(),QPoint(62,36),curr_size);
+        if(ai_obj.classname!=-1){
+            ai_obj.set_angle_center(ptz_angle,ai_obj.get_center(),getFOV(raw_zoom),curr_size);
+            ai_obj.set_angle_center_projective(ptz_angle,ai_obj.get_center(),curr_size,getFOV(raw_zoom));
+        }
         update_storage(ai_obj);
     }
     QStringList olds;
@@ -138,8 +162,8 @@ void VideoWidget::paintGL()
     emit set_meta_f_z(d_frame_time,human_zoom);
     emit set_meta_a_p(ptz_angle,st_pos);
     emit set_meta_d(st_dist);
-m_frameQueue.
-    QImage imgToDraw = m_frame_time m_image;
+
+    QImage imgToDraw = findFrameById(m_frame_time);
     painter.drawImage(rect(),imgToDraw);
     paint_overlay(&painter);
     paint_ai_objs(&painter,m_storage_move->values());
@@ -151,8 +175,8 @@ void VideoWidget::paint_overlay(QPainter* painter)
     if(show_aim)draw_aim(painter,QPoint(rect().width() /2,rect().height()/2));
     if(show_text)draw_text(painter);
     if(show_degree){
-        draw_azimuth_scale(painter,ptz_angle.x());
-        drawPitchScale(painter,ptz_angle.y());
+        draw_azimuth_scale(painter,ptz_angle.x(),raw_zoom);
+        drawPitchScale(painter,ptz_angle.y(),raw_zoom);
     }
 }
 
@@ -206,8 +230,8 @@ void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)
             draw_aim(painter,temp.get_local_center(QPointF(sx,sy)));
             if(temp.kalman_init)kalman_init(temp);
             QPointF filtered = kalman_update(temp,  temp.angle_center, 1.0/30.0);
-            QPointF tempo= temp.get_global_to_local_center(temp.angle_center,ptz_angle,getFOV(raw_zoom),curr_size);
 
+            QPointF tempo= temp.get_global_to_local_center(temp.angle_center,ptz_angle,getFOV(raw_zoom),curr_size);
             draw_aim(painter,QPoint(tempo.x()*sx,tempo.y()*sy),red_overlay);
             qDebug()<<temp.get_name()<<"filtered"<<filtered<<temp.angle_center;
         }
@@ -224,97 +248,97 @@ void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)
     }
 }
 
-void VideoWidget::draw_azimuth_scale( QPainter* painter, double headingDeg)
-{
-    const int y = 30;
-    const int scaleWidth = width() * 0.8;
-    const int centerX = width() / 2;
-    const int leftX = centerX - scaleWidth / 2;
-    painter->setPen(QPen(green_overlay, 2));
-    painter->drawLine(leftX, y, leftX + scaleWidth, y);
-    const double visibleDeg = 120.0;
-    const double pxPerDeg = scaleWidth / visibleDeg;
-    QFontMetrics fm(painter->font());
-    for (int deg = -180; deg <= 540; deg += 5)
-    {
-        double delta = deg - headingDeg;
-        while (delta > 180) delta -= 360;
-        while (delta < -180) delta += 360;
-        if (std::abs(delta) > visibleDeg / 2.0) continue;
-        int x = centerX + delta * pxPerDeg;
-        bool major = (deg % 30 == 0);
-        int tickHeight = major ? 15 : 8;
-        painter->drawLine(x, y, x, y + tickHeight);
-        if (major){
-            int norm = deg % 360;
-            if (norm < 0) norm += 360;
-            QString text;
-            switch (norm){
-            case 0:   text = "N";  break;
-            case 45:  text = "NE"; break;
-            case 90:  text = "E";  break;
-            case 135: text = "SE"; break;
-            case 180: text = "S";  break;
-            case 225: text = "SW"; break;
-            case 270: text = "W";  break;
-            case 315: text = "NW"; break;
-            default:
-                text = QString::number(norm);
-            }
-            int tw = fm.horizontalAdvance(text);
-            painter->drawText( x - tw / 2, y + tickHeight + fm.height(), text);
-        }
-    }
-    painter->setPen(QPen(red_overlay, 3));
-    painter->drawLine(centerX, y - 10, centerX, y + 15);
-    painter->setPen(QPen(gray_overlay, 3));
-    double absAngle = std::abs(headingDeg);
-    int deg = static_cast<int>(absAngle);
-    double min_full = (absAngle - deg) * 60.0;
-    int min = static_cast<int>(min_full);
-    double sec = (min_full - min) * 60.0;
+// void VideoWidget::draw_azimuth_scale( QPainter* painter, double headingDeg)
+// {
+//     const int y = 30;
+//     const int scaleWidth = width() * 0.8;
+//     const int centerX = width() / 2;
+//     const int leftX = centerX - scaleWidth / 2;
+//     painter->setPen(QPen(green_overlay, 2));
+//     painter->drawLine(leftX, y, leftX + scaleWidth, y);
+//     const double visibleDeg = 120.0;
+//     const double pxPerDeg = scaleWidth / visibleDeg;
+//     QFontMetrics fm(painter->font());
+//     for (int deg = -180; deg <= 540; deg += 5)
+//     {
+//         double delta = deg - headingDeg;
+//         while (delta > 180) delta -= 360;
+//         while (delta < -180) delta += 360;
+//         if (std::abs(delta) > visibleDeg / 2.0) continue;
+//         int x = centerX + delta * pxPerDeg;
+//         bool major = (deg % 30 == 0);
+//         int tickHeight = major ? 15 : 8;
+//         painter->drawLine(x, y, x, y + tickHeight);
+//         if (major){
+//             int norm = deg % 360;
+//             if (norm < 0) norm += 360;
+//             QString text;
+//             switch (norm){
+//             case 0:   text = "N";  break;
+//             case 45:  text = "NE"; break;
+//             case 90:  text = "E";  break;
+//             case 135: text = "SE"; break;
+//             case 180: text = "S";  break;
+//             case 225: text = "SW"; break;
+//             case 270: text = "W";  break;
+//             case 315: text = "NW"; break;
+//             default:
+//                 text = QString::number(norm);
+//             }
+//             int tw = fm.horizontalAdvance(text);
+//             painter->drawText( x - tw / 2, y + tickHeight + fm.height(), text);
+//         }
+//     }
+//     painter->setPen(QPen(red_overlay, 3));
+//     painter->drawLine(centerX, y - 10, centerX, y + 15);
+//     painter->setPen(QPen(gray_overlay, 3));
+//     double absAngle = std::abs(headingDeg);
+//     int deg = static_cast<int>(absAngle);
+//     double min_full = (absAngle - deg) * 60.0;
+//     int min = static_cast<int>(min_full);
+//     double sec = (min_full - min) * 60.0;
 
-    if (headingDeg < 0) deg = -deg;
-    painter->drawText(centerX - 46, y - 15, QString("%1° %2' %3''").arg(headingDeg, 3, 'd', 0).arg(min_full, 2, 'd', 0).arg(sec, 2, 'd', 0));
-}
+//     if (headingDeg < 0) deg = -deg;
+//     painter->drawText(centerX - 46, y - 15, QString("%1° %2' %3''").arg(headingDeg, 3, 'd', 0).arg(min_full, 2, 'd', 0).arg(sec, 2, 'd', 0));
+// }
 
-void VideoWidget::drawPitchScale(QPainter* painter, double pitchDeg)
-{
-    const int x = width() - 50;
-    const int scaleHeight = height() * 0.8;
-    const int centerY = height() / 2;
-    const int topY = centerY - scaleHeight / 2;
-    painter->setPen(QPen(green_overlay, 2));
-    painter->drawLine(x, topY, x, topY + scaleHeight);
-    const double visibleDeg = 60.0;
-    const double pxPerDeg = scaleHeight / visibleDeg;
-    QFontMetrics fm(painter->font());
-    while (pitchDeg > 180) pitchDeg -= 360;
-    while (pitchDeg < -180) pitchDeg += 360;
-    for (int deg = -90; deg <= 90; deg += 5){
-        double delta = -deg + pitchDeg;
-        if (std::abs(delta) > visibleDeg / 2.0) continue;
-        int y = centerY - delta * pxPerDeg;
-        bool major = (deg % 10 == 0);
-        int tickLen = major ? 15 : 8;
-        painter->drawLine(x - tickLen,y,x,y);
-        if (major){
-            QString text = QString::number(deg);
-            painter->drawText( x - tickLen - fm.horizontalAdvance(text) - 5, y + fm.height() / 3, text);
-        }
-    }
-    painter->setPen(QPen(red_overlay, 3));
-    painter->drawLine( x - 15, centerY, x + 10, centerY);
-    painter->setPen(QPen(gray_overlay, 3));
-    double absAngle = std::abs(pitchDeg);
-    int deg = static_cast<int>(absAngle);
-    double min_full = (absAngle - deg) * 60.0;
-    int min = static_cast<int>(min_full);
-    double sec = (min_full - min) * 60.0;
+// void VideoWidget::drawPitchScale(QPainter* painter, double pitchDeg)
+// {
+//     const int x = width() - 50;
+//     const int scaleHeight = height() * 0.8;
+//     const int centerY = height() / 2;
+//     const int topY = centerY - scaleHeight / 2;
+//     painter->setPen(QPen(green_overlay, 2));
+//     painter->drawLine(x, topY, x, topY + scaleHeight);
+//     const double visibleDeg = 60.0;
+//     const double pxPerDeg = scaleHeight / visibleDeg;
+//     QFontMetrics fm(painter->font());
+//     while (pitchDeg > 180) pitchDeg -= 360;
+//     while (pitchDeg < -180) pitchDeg += 360;
+//     for (int deg = -90; deg <= 90; deg += 5){
+//         double delta = -deg + pitchDeg;
+//         if (std::abs(delta) > visibleDeg / 2.0) continue;
+//         int y = centerY - delta * pxPerDeg;
+//         bool major = (deg % 10 == 0);
+//         int tickLen = major ? 15 : 8;
+//         painter->drawLine(x - tickLen,y,x,y);
+//         if (major){
+//             QString text = QString::number(deg);
+//             painter->drawText( x - tickLen - fm.horizontalAdvance(text) - 5, y + fm.height() / 3, text);
+//         }
+//     }
+//     painter->setPen(QPen(red_overlay, 3));
+//     painter->drawLine( x - 15, centerY, x + 10, centerY);
+//     painter->setPen(QPen(gray_overlay, 3));
+//     double absAngle = std::abs(pitchDeg);
+//     int deg = static_cast<int>(absAngle);
+//     double min_full = (absAngle - deg) * 60.0;
+//     int min = static_cast<int>(min_full);
+//     double sec = (min_full - min) * 60.0;
 
-    if (pitchDeg < 0) deg = -deg;
-    painter->drawText( x + 10, centerY -15,  QString("%1°").arg(pitchDeg, 3, 'd', 0));
-    painter->drawText( x + 10, centerY +5, QString("%1'").arg(min_full, 3, 'd', 0));
-    painter->drawText( x + 10, centerY +25, QString("%1''").arg(sec, 3, 'd', 0));
-}
+//     if (pitchDeg < 0) deg = -deg;
+//     painter->drawText( x + 10, centerY -15,  QString("%1°").arg(pitchDeg, 3, 'd', 0));
+//     painter->drawText( x + 10, centerY +5, QString("%1'").arg(min_full, 3, 'd', 0));
+//     painter->drawText( x + 10, centerY +25, QString("%1''").arg(sec, 3, 'd', 0));
+// }
 

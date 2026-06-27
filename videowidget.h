@@ -8,6 +8,7 @@
 #include <QQueue>
 #include <QVector3D>
 #include <QVector2D>
+#include <QPainter>
 #include "func_and_structure.h"
 
 namespace Ui {
@@ -82,9 +83,159 @@ private:
     void paint_overlay(QPainter *);
     void paint_ai_objs(QPainter *,QVector<Detection>);
     void draw_aim(QPainter *painter,QPoint,QColor col=QColor(0, 0xdd, 0, 0xaa));
-    void draw_azimuth_scale(QPainter*, double);
-    void drawPitchScale(QPainter*, double);
+    // void draw_azimuth_scale(QPainter*, double);
+    // void drawPitchScale(QPainter*, double);
     void draw_text(QPainter *painter);
     void work_with_storage(QJsonArray ai);
     void update_storage(Detection ogj);
+    QImage findFrameById(int frameId);
+
+    void draw_azimuth_scale( QPainter* painter, double headingDeg, double cameraZoom){
+        const int y = 30;
+        const int scaleWidth = width() * 0.8;
+        const int centerX = width() / 2;
+        const int leftX = centerX - scaleWidth / 2;
+
+        double hfov = getHFOV(cameraZoom); // ВАЖНО
+
+        painter->setPen(QPen(green_overlay, 2));
+        painter->drawLine(leftX, y, leftX + scaleWidth, y);
+
+        QFontMetrics fm(painter->font());
+
+        // адаптивный шаг делений
+        double step = hfov / 10.0; // 10 делений на экран
+        if (step < 1) step = 1;
+        if (step > 30) step = 30;
+
+        for (double deg = -180; deg <= 540; deg += step)
+        {
+            double delta = deg - headingDeg;
+
+            // нормализация угла
+            while (delta > 180) delta -= 360;
+            while (delta < -180) delta += 360;
+
+            if (std::abs(delta) > hfov / 2.0)
+                continue;
+
+            double norm = delta / hfov;
+            int x = centerX + norm * scaleWidth;
+
+            bool major = (fmod(deg, step * 3) < 0.001);
+
+            int tickHeight = major ? 15 : 8;
+            painter->drawLine(x, y, x, y + tickHeight);
+
+            if (major)
+            {
+                int normDeg = ((int)deg) % 360;
+                if (normDeg < 0) normDeg += 360;
+
+                QString text;
+
+                switch (normDeg)
+                {
+                case 0:   text = "N";  break;
+                case 45:  text = "NE"; break;
+                case 90:  text = "E";  break;
+                case 135: text = "SE"; break;
+                case 180: text = "S";  break;
+                case 225: text = "SW"; break;
+                case 270: text = "W";  break;
+                case 315: text = "NW"; break;
+                default:
+                    text = QString::number(normDeg);
+                }
+
+                int tw = fm.horizontalAdvance(text);
+                painter->drawText(x - tw / 2,
+                                  y + tickHeight + fm.height(),
+                                  text);
+            }
+        }
+
+        // центр (куда смотрит камера)
+        painter->setPen(QPen(red_overlay, 3));
+        painter->drawLine(centerX, y - 10, centerX, y + 15);
+
+        // текст угла
+        painter->setPen(QPen(gray_overlay, 3));
+        painter->drawText(centerX - 46,
+                          y - 15,
+                          QString::number(headingDeg, 'f', 2) + "°");
+    }
+    void drawPitchScale(QPainter* painter,double pitchDeg,double cameraZoom)
+    {
+        const int x = width() - 50;
+        const int scaleHeight = height() * 0.8;
+        const int centerY = height() / 2;
+        const int topY = centerY - scaleHeight / 2;
+
+        double vfov = getVFOV(cameraZoom); // ВАЖНО
+
+        painter->setPen(QPen(green_overlay, 2));
+        painter->drawLine(x, topY, x, topY + scaleHeight);
+
+        QFontMetrics fm(painter->font());
+
+        // нормализация углов камеры
+        while (pitchDeg > 180) pitchDeg -= 360;
+        while (pitchDeg < -180) pitchDeg += 360;
+
+        for (double deg = -90; deg <= 90; deg += 2.5)
+        {
+            double delta = deg - pitchDeg;
+
+            if (std::abs(delta) > vfov / 2.0)
+                continue;
+
+            // ===== PROJECTION (главное отличие) =====
+            double yNorm =
+                tan(qDegreesToRadians(delta)) /
+                tan(qDegreesToRadians(vfov / 2.0));
+
+            int y = centerY - yNorm * scaleHeight / 2.0;
+
+            bool major = (fmod(deg, 10.0) < 0.001);
+
+            int tickLen = major ? 15 : 8;
+
+            painter->drawLine(x - tickLen, y, x, y);
+
+            if (major)
+            {
+                QString text = QString::number(deg);
+
+                painter->drawText(
+                    x - tickLen - fm.horizontalAdvance(text) - 5,
+                    y + fm.height() / 3,
+                    text);
+            }
+        }
+
+        // центр (0 pitch камеры)
+        painter->setPen(QPen(red_overlay, 3));
+        painter->drawLine(x - 15, centerY, x + 10, centerY);
+
+        // текущее значение
+        painter->setPen(QPen(gray_overlay, 3));
+
+        double absAngle = std::abs(pitchDeg);
+        int deg = static_cast<int>(absAngle);
+        double min_full = (absAngle - deg) * 60.0;
+        int min = static_cast<int>(min_full);
+        double sec = (min_full - min) * 60.0;
+
+        if (pitchDeg < 0) deg = -deg;
+
+        painter->drawText(x + 10, centerY - 15,
+                          QString("%1°").arg(pitchDeg, 0, 'f', 1));
+
+        painter->drawText(x + 10, centerY + 5,
+                          QString("%1'").arg(min_full, 0, 'f', 1));
+
+        painter->drawText(x + 10, centerY + 25,
+                          QString("%1''").arg(sec, 0, 'f', 1));
+    }
 };
