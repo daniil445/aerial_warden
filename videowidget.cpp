@@ -229,6 +229,7 @@ void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)
 
             QPointF tempo= temp.get_global_to_local_center(temp.angle_center,ptz_angle,getFOV(raw_zoom),curr_size);
             draw_aim(painter,QPoint(tempo.x()*sx,tempo.y()*sy),red_overlay);
+            draw_aim(painter,QPoint(0,0),gray_overlay);
             qDebug()<<temp.get_name()<<"filtered"<<filtered<<temp.angle_center;
         }
         painter->setPen(QPen(color,pen_size));

@@ -79,7 +79,7 @@ public:
                 }
             }
         }
-        if(ip=="")return;
+        // if(ip=="")return;
         QJsonObject obj;
         obj["source"] = "user";
         obj["cmd"] = "client_ip";
