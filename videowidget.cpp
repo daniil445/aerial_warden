@@ -2,6 +2,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 
+#include <QMouseEvent>
 #include <QSettings>
 
 VideoWidget::VideoWidget(QWidget *parent)
@@ -12,11 +13,35 @@ VideoWidget::VideoWidget(QWidget *parent)
 void VideoWidget::initializeGL()
 {
     initializeOpenGLFunctions();
+    connect(this,&VideoWidget::imageClicked,this,&VideoWidget::onImageClicked);
     glClearColor(0, 0, 0, 1);
     QImage img(1280, 720, QImage::Format_RGB888);
     img.fill(Qt::black);
     setFrame(0,img);
     m_image= img;
+}
+
+void VideoWidget::mousePressEvent(QMouseEvent *event)
+{
+    setFocus();
+    if (event->button() == Qt::LeftButton)
+        emit imageClicked(event->pos());
+
+    QOpenGLWidget::mousePressEvent(event);
+}
+void VideoWidget::onImageClicked(QPoint p)
+{
+    int cx = width()/2;
+    int cy = height()/2;
+    double degPerPixelX = getFOV(raw_zoom).x() / width();
+    double degPerPixelY = getFOV(raw_zoom).y() / height();
+    double dx = p.x() - cx;
+    double dy = p.y() - cy;
+    double targetAz = ptz_angle.x() + dx * degPerPixelX;
+    double targetEl = ptz_angle.y() - dy * degPerPixelY;
+    QPointF temp =QPointF(targetAz,targetEl);
+    qDebug()<< "Goto"<< targetAz<< targetEl;
+    emit moveToCommand(temp);
 }
 
 void VideoWidget::setFrame(quint64 time,const QImage& img)
@@ -75,9 +100,11 @@ void VideoWidget::setMeta(const QJsonObject &obj)
     }
 
     QJsonArray ptz_ang=station["ang"].toArray();
-    if(ptz_ang.count()>1){
+    if(ptz_ang.count()>3){
         ptz_angle.setX(ptz_ang[0].toDouble());
         ptz_angle.setY(ptz_ang[1].toDouble());
+        ptz_speed.setX(ptz_ang[2].toDouble());
+        ptz_speed.setY(ptz_ang[3].toDouble());
     }
 
     QJsonArray pos=station["pos"].toArray();
@@ -171,6 +198,8 @@ void VideoWidget::paint_overlay(QPainter* painter)
     if(show_aim){
         draw_aim(painter,QPoint(rect().width() /2,rect().height()/2));
         draw_test_marker(painter, ptz_angle, ptz_angle.toPointF(), getFOV(raw_zoom), size());
+        draw_test_marker(painter, ptz_angle, QPoint(32,19), getFOV(raw_zoom), size());
+        drawMotionVector(painter,ptz_speed);
     }
 
     if(show_text)draw_text(painter);

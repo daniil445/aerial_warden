@@ -38,6 +38,10 @@ signals:
     void set_meta_f_z(int frame, double zoom);
     void set_meta_a_p(QVector2D,QVector3D);
     void set_meta_d(double);
+    void imageClicked(QPoint pos);
+    void moveToCommand(QPointF);
+
+
 public slots:
     void setFrame(quint64 name,const QImage& img);
     void setMeta(const QJsonObject& obj);
@@ -51,6 +55,9 @@ public slots:
 protected:
     void paintGL() override;
     void initializeGL() override;
+    void mousePressEvent(QMouseEvent *event) override;
+private slots:
+    void onImageClicked(QPoint p);
 private:
     QMap<QString, Detection>* m_storage_move = nullptr;
     QMap<QString, Detection>* m_storage = nullptr;
@@ -71,6 +78,7 @@ private:
 
     QVector3D st_angle=QVector3D(0,0,0);
     QVector2D ptz_angle=QVector2D(0,0);
+    QVector2D ptz_speed=QVector2D(0,0);
     QVector3D st_pos=QVector3D(0,0,0);
     double st_dist=-1;
 
@@ -90,13 +98,13 @@ private:
     void update_storage(Detection ogj);
     QImage findFrameById(int frameId);
 
-    void draw_test_marker(QPainter* painter,  QVector2D camera_angle, QPointF marker_angle, QPointF fov, QSize image_size){
+    void draw_test_marker(QPainter* painter,  QVector2D camera_angle, QPointF marker_angle, QPointF fov, QSize image_size, QColor col=QColor(0xdd, 0, 0xdd, 0xaa)){
         QPoint p = globalToLocal( camera_angle, marker_angle, fov, image_size);
         // если вышли за экран
         if(p.x() < -100 || p.x() > image_size.width()+100) return;
         if(p.y() < -100 || p.y() > image_size.height()+100) return;
         painter->save();
-        painter->setPen(QPen(Qt::red,2));
+        painter->setPen(QPen(col,2));
         int r = 20;
         painter->drawLine( p.x()-r, p.y(), p.x()+r, p.y());
         painter->drawLine( p.x(), p.y()-r, p.x(),p.y()+r);
@@ -104,8 +112,31 @@ private:
         painter->drawText( p.x()+10, p.y()-10, QString("%1 %2") .arg(marker_angle.x(),0,'f',2).arg(marker_angle.y(),0,'f',2));
         painter->restore();
     }
+    void drawMotionVector(QPainter* painter, QVector2D speed, QColor col=QColor(0xdd, 0xdd, 0, 0xaa)){
+        if (qFuzzyIsNull(speed.x()) && qFuzzyIsNull(speed.y())) return;
+        QPoint center(width()/2, height()/2);
+        const double maxLen = 100.0;
+        double len = std::hypot(speed.x(), speed.y());
+        double nx = speed.x();
+        double ny = speed.y();
+        if (len > 0.0001){
+            nx /= len;
+            ny /= len;
+        }
+        double drawLen = std::min(len * 5.0, maxLen);
+        QPoint end(center.x() + nx * drawLen, center.y() - ny * drawLen);
+        painter->setPen(QPen(col, 3));
+        painter->drawLine(center, end);
+        double angle = atan2(center.y() - end.y(),end.x() - center.x());
+        const double head = 12;
+        QPointF p1(end.x() - head*cos(angle - M_PI/6),end.y() + head*sin(angle - M_PI/6));
+        QPointF p2(end.x() - head*cos(angle + M_PI/6),end.y() + head*sin(angle + M_PI/6));
+        painter->drawLine(end, p1.toPoint());
+        painter->drawLine(end, p2.toPoint());
+        painter->drawText(end + QPoint(10, -10),QString("%1 %2").arg(speed.x(),0,'f',1).arg(speed.y(),0,'f',1));
+    }
 
-    void draw_azimuth_scale( QPainter* painter, double headingDeg, double cameraZoom){
+    void draw_azimuth_scale(QPainter* painter, double headingDeg, double cameraZoom){
         const int y = 30;
         const int scaleWidth = width() * 0.8;
         const int centerX = width() / 2;

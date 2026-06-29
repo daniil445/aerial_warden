@@ -17,9 +17,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->cb_show_birds, &QCheckBox::toggled, [=](bool val) {ui->openGLWidget_RGB->motion_birds=val;});
     connect(ui->cb_show_cars, &QCheckBox::toggled,  [=](bool val) {ui->openGLWidget_RGB->motion_cars=val;});
     connect(ui->cb_show_mans, &QCheckBox::toggled,  [=](bool val) {ui->openGLWidget_RGB->motion_mans=val;});
-    connect(ui->cb_show_aim, &QCheckBox::toggled,[=](bool val) {ui->openGLWidget_RGB->show_aim=val;});
+    connect(ui->cb_show_aim, &QCheckBox::toggled,   [=](bool val) {ui->openGLWidget_RGB->show_aim=val;});
     connect(ui->cb_show_degree, &QCheckBox::toggled,[=](bool val) {ui->openGLWidget_RGB->show_degree=val;});
-    connect(ui->cb_show_text, &QCheckBox::toggled,[=](bool val) {ui->openGLWidget_RGB->show_text=val;});
+    connect(ui->cb_show_text, &QCheckBox::toggled,  [=](bool val) {ui->openGLWidget_RGB->show_text=val;});
 
     dialog_sett= new conn_settings;
     connect(dialog_sett, &conn_settings::connect_to, this, &MainWindow::try_to_connect);
@@ -69,6 +69,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,follower,&target_escort::update_meta_pos);
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,ui->controls, &motion_controller::update_aim);
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_d,this,&MainWindow::update_distance);
+    connect(ui->openGLWidget_RGB, &VideoWidget::moveToCommand,this,&MainWindow::sendMoveToCommandPos);
 
 
     QSettings settings("config.ini", QSettings::IniFormat);
@@ -152,6 +153,10 @@ void MainWindow::sendMoveCommand(const QString& cmd, double speed, bool pressed)
         sender->sendMove(temp);
 //        qDebug()<<"sendMove"<<temp<<pressed<<speed<<temp_speed_x<<temp_speed_y;
     }
+}
+void MainWindow::sendMoveToCommandPos(QPointF pos)
+{
+    sendMoveToCommand(pos.x(),pos.y(),5,5);
 }
 
 void MainWindow::sendMoveToCommand(double pos_x, double pos_y, double speed_x, double speed_y)
