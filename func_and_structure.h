@@ -55,26 +55,18 @@ inline double zoom_human_to_camera(double zoomX)
 
     return (f - fw) / (ft - fw);
 }
-
-// inline bool isNear(const QVector3D& a, const QVector3D& b, double eps = 1e-4)
-// {
-//     return (a - b).lengthSquared() < eps * eps;
-// }
-
-// inline QPointF mirrorY(QPointF point)
-// {
-//     return QPointF(point.x(),-point.y());
-// }
-
-// inline QPointF mirrorX(QPointF point)
-// {
-//     return QPointF(-point.x(),point.y());
-// }
-
-// inline QPointF mirrorXY(QPointF point)
-// {
-//     return QPointF(-point.x(),-point.y());
-// }
+inline QPoint globalToLocal( QVector2D camera_angle, QPointF target_angle, QPointF fov, QSize size)
+{
+    double dAz = target_angle.x() -camera_angle.x();
+    double dEl =target_angle.y() - camera_angle.y();
+    while(dAz > 180) dAz -= 360;
+    while(dAz < -180) dAz += 360;
+    double nx = tan(qDegreesToRadians(dAz)) / tan(qDegreesToRadians(fov.x()/2.0));
+    double ny =tan(qDegreesToRadians(dEl)) / tan(qDegreesToRadians(fov.y()/2.0));
+    int px = size.width()/2 + nx * size.width()/2;
+    int py =size.height()/2 - ny * size.height()/2;
+    return QPoint(px,py);
+}
 
 // -------------------------------------------------------------------------------- struct
 
@@ -322,3 +314,4 @@ inline QPointF kalman_predict(const Detection &det, double future_dt){
 
     return QPointF(az,el);
 }
+

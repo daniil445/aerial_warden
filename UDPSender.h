@@ -73,8 +73,8 @@ public:
             {
                 if (entry.ip().protocol() == QAbstractSocket::IPv4Protocol)
                 {
-                    qDebug() << "Interface:" << iface.humanReadableName()
-                    << "IP:" << entry.ip().toString();
+                    // qDebug() << "Interface:" << iface.humanReadableName()
+                    // << "IP:" << entry.ip().toString();
                     if(iface.humanReadableName()=="Ethernet")ip=entry.ip().toString();
                 }
             }

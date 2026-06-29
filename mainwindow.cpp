@@ -41,6 +41,7 @@ MainWindow::MainWindow(QWidget *parent)
     //// linkers
     follower->link_storages(&storage_move,&storage);
     ui->openGLWidget_RGB->link_storages(&storage_move,&storage);
+    follower->start();
 
     connect(ui->alg_zoom, &QCheckBox::toggled, [=](bool var) {follower->follow_zoom=var;});
     connect(ui->openGLWidget_RGB, &VideoWidget::update_size,follower, &target_escort::update_size);
@@ -51,7 +52,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->openGLWidget_RGB,&VideoWidget::update_list,this, &MainWindow::update_list);
     connect(follower, &target_escort::zoom_to_object, [=](double val) {sender->sendZoom(main_stream,val);});
 
-    follower->start();
 
     connect(ui->controls, &motion_controller::moveCommand,this,&MainWindow::sendMoveCommand);
     connect(ui->controls, &motion_controller::moveToCommand,this,&MainWindow::sendMoveToCommand);
@@ -92,19 +92,19 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::try_to_connect(QStringList url_cam_rgb,QStringList url_cam_ir,QStringList url_main)
+void MainWindow::try_to_connect(QStringList url_main)
 {
-    qDebug()<<"update stream"<<"rtsp://"<<url_cam_rgb[0]+":"+url_cam_rgb[1];
-    qDebug()<<"update stream"<<"rtsp://"<<url_cam_ir[0]+":"+url_cam_ir[1];
     main_ip=url_main[0];
     main_port=url_main[1].toInt();
     meta_port=url_main[2].toInt();
-    rtcp_receiver_RGB->setUrl("rtsp://admin:admin@"+url_cam_rgb[0]+":"+url_cam_rgb[1]+"/cam/realmonitor?channel=1&subtype=0");
+    rtcp_receiver_RGB->setUrl("rtsp://"+main_ip+":"+url_main[3]+"/rgb");
     rtcp_receiver_RGB->start();
-    rtcp_receiver_IR->setUrl("rtsp://admin:admin@"+url_cam_ir[0]+":"+url_cam_ir[1]+"/ir");
+    rtcp_receiver_IR ->setUrl("rtsp://"+main_ip+":"+url_main[4]+"/ir");
     rtcp_receiver_IR->start();
 
-    qDebug()<<"update meta"<<url_main[0]<<url_main[1]<<url_main[2];
+    qDebug()<<"update stream"<<"rtsp://"<<main_ip+":"+url_main[3];
+    qDebug()<<"update stream"<<"rtsp://"<<main_ip+":"+url_main[4];
+    qDebug()<<"update meta"<<"UDP"<<main_ip<<url_main[1]<<url_main[2];
 
     UDP_receiver->bind(main_ip,meta_port);
     sender->sendAddress(main_ip,main_port);

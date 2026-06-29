@@ -15,7 +15,7 @@ public:
     explicit conn_settings(QWidget *parent = nullptr);
     ~conn_settings();
 signals:
-    void connect_to(QStringList,QStringList,QStringList);
+    void connect_to(QStringList);
 public slots:
 
 private slots:

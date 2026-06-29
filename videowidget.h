@@ -90,6 +90,21 @@ private:
     void update_storage(Detection ogj);
     QImage findFrameById(int frameId);
 
+    void draw_test_marker(QPainter* painter,  QVector2D camera_angle, QPointF marker_angle, QPointF fov, QSize image_size){
+        QPoint p = globalToLocal( camera_angle, marker_angle, fov, image_size);
+        // если вышли за экран
+        if(p.x() < -100 || p.x() > image_size.width()+100) return;
+        if(p.y() < -100 || p.y() > image_size.height()+100) return;
+        painter->save();
+        painter->setPen(QPen(Qt::red,2));
+        int r = 20;
+        painter->drawLine( p.x()-r, p.y(), p.x()+r, p.y());
+        painter->drawLine( p.x(), p.y()-r, p.x(),p.y()+r);
+        painter->drawEllipse(p,6,6);
+        painter->drawText( p.x()+10, p.y()-10, QString("%1 %2") .arg(marker_angle.x(),0,'f',2).arg(marker_angle.y(),0,'f',2));
+        painter->restore();
+    }
+
     void draw_azimuth_scale( QPainter* painter, double headingDeg, double cameraZoom){
         const int y = 30;
         const int scaleWidth = width() * 0.8;

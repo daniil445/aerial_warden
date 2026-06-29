@@ -25,11 +25,11 @@ public:
         // слушаем все интерфейсы
         bool ok = socket->bind(QHostAddress::Any, port);
 //        bool ok = socket->bind(QHostAddress(addr), port);
-        qDebug() << "UDP:" <<addr<< port;
+        // qDebug() << "UDP:" <<addr<< port;
         if (!ok) {
             qDebug() << "UDP bind failed:" << socket->errorString();
         } else {
-            qDebug() << "UDP listening on port:" <<addr<< port;
+            // qDebug() << "UDP listening on port:" <<addr<< port;
         }
 
         return ok;

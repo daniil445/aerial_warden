@@ -168,7 +168,11 @@ void VideoWidget::paintGL()
 
 void VideoWidget::paint_overlay(QPainter* painter)
 {
-    if(show_aim)draw_aim(painter,QPoint(rect().width() /2,rect().height()/2));
+    if(show_aim){
+        draw_aim(painter,QPoint(rect().width() /2,rect().height()/2));
+        draw_test_marker(painter, ptz_angle, ptz_angle.toPointF(), getFOV(raw_zoom), size());
+    }
+
     if(show_text)draw_text(painter);
     if(show_degree){
         draw_azimuth_scale(painter,ptz_angle.x(),raw_zoom);
