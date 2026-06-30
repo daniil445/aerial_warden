@@ -223,7 +223,7 @@ GstPadProbeReturn RtspReceiver::on_rtp_probe(
     gst_rtp_buffer_unmap(&rtp);
 
     self->m_lastSeq = ts;
-    qDebug() << "RTP" << "seq =" << seq<< "ts =" << ts << "ssrc =" << ssrc<< "marker =" << marker<<gst_rtp_buffer_get_header_len(&rtp);
+//    qDebug() << "RTP" << "seq =" << seq<< "ts =" << ts << "ssrc =" << ssrc<< "marker =" << marker<<gst_rtp_buffer_get_header_len(&rtp);
 
     return GST_PAD_PROBE_OK;
 }

@@ -10,6 +10,12 @@
 //     Arbitrary
 // };
 
+inline QVector<double> zoomT  ={0.0,0.0,0.0,0.0,0.0,0.0,0.6,0.0,0.0,
+                                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                                0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0};
+
 // -------------------------------------------------------------------------------- convertors
 
 
@@ -36,25 +42,6 @@ inline QPointF getFOV(double zoom)
     return QPointF(getHFOV(zoom),getVFOV(zoom));
 }
 
-inline double zoom_camera_to_human(double z)
-{
-    double hfov = getHFOV(z);
-
-    return tan(qDegreesToRadians(66.0/2.0)) /
-           tan(qDegreesToRadians(hfov/2.0));
-}
-inline double zoom_human_to_camera(double zoomX)
-{
-    const double hfovWide = 66.0;
-    const double hfovTele = 1.49;
-    zoomX = qBound(1.0, zoomX, 50.0);
-    double fw =1.0 / tan(qDegreesToRadians(hfovWide / 2.0));
-    double ft = 1.0 / tan(qDegreesToRadians(hfovTele / 2.0));
-
-    double f = fw * zoomX;
-
-    return (f - fw) / (ft - fw);
-}
 inline QPoint globalToLocal( QVector2D camera_angle, QPointF target_angle, QPointF fov, QSize size)
 {
     double dAz = target_angle.x() -camera_angle.x();
@@ -314,4 +301,3 @@ inline QPointF kalman_predict(const Detection &det, double future_dt){
 
     return QPointF(az,el);
 }
-

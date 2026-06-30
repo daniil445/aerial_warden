@@ -16,10 +16,10 @@ void conn_settings::on_btn_save_clicked()
 {
     QStringList main;
     main.append(ui->url_main->text());
-    main.append(ui->port_cam_RGB->text());
-    main.append(ui->port_cam_IR->text());
     main.append(ui->port_meta->text());
     main.append(ui->port_meta_reciever->text());
+    main.append(ui->port_cam_RGB->text());
+    main.append(ui->port_cam_IR->text());
     emit connect_to(main);
     this->close();
 }

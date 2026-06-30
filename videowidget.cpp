@@ -40,7 +40,7 @@ void VideoWidget::onImageClicked(QPoint p)
     double targetAz = ptz_angle.x() + dx * degPerPixelX;
     double targetEl = ptz_angle.y() - dy * degPerPixelY;
     click_pos =QPointF(targetAz,targetEl);
-    qDebug()<< "Goto"<< targetAz<< targetEl;
+//    qDebug()<< "Goto"<< targetAz<< targetEl;
 
     emit moveToCommand(click_pos);
 }
@@ -55,7 +55,7 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
 
     m_frameQueue.enqueue(qf);
 
-//    qDebug()<<"setFrame"<<(quint16)time<<m_frameQueue.size();
+//    qDebug()<<"setFrame"<<(quint64)time;
     if(m_frameQueue.size() > MAX_QUEUE){
         QMutexLocker locker(&m_mutex);
         QueuedFrame temp =m_frameQueue.dequeue();
@@ -67,8 +67,8 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
 
 QImage VideoWidget::findFrameById(int frameId)
 {
-    qDebug()<<"m_frameQueue"<<frameId<<m_frameQueue.size();
-    if(frameId==-1)return m_frameQueue.dequeue().image;
+//    qDebug()<<"m_frameQueue"<<frameId<<m_frameQueue.size();
+    if(frameId==-1 &&m_frameQueue.size()!=0)return m_frameQueue.dequeue().image;
     while (!m_frameQueue.isEmpty())
     {
         const QueuedFrame& m = m_frameQueue.head();
@@ -86,13 +86,12 @@ QImage VideoWidget::findFrameById(int frameId)
 
 void VideoWidget::setMeta(const QJsonObject &obj)
 {
-    qDebug()<<"meta"<<obj;
+//    qDebug()<<"meta"<<obj;
     QJsonObject camera =obj["rgb"].toObject();
     m_frame_time = camera["ts"].toInteger();
-
+//    qDebug()<<"setMeta "<<m_frame_time;
     raw_zoom=camera["zoom"].toDouble();
-    human_zoom=zoom_camera_to_human(raw_zoom);
-    qDebug()<<"zooms"<<raw_zoom<<human_zoom<<zoom_human_to_camera(human_zoom);
+//    qDebug()<<"zooms"<<raw_zoom<<human_zoom<<zoom_human_to_camera(human_zoom);
     QJsonObject station =obj["st"].toObject();
 
     QJsonArray st_ang=station["gyro"].toArray();
@@ -105,9 +104,9 @@ void VideoWidget::setMeta(const QJsonObject &obj)
     QJsonArray ptz_ang=station["ang"].toArray();
     if(ptz_ang.count()>3){
         ptz_angle.setX(ptz_ang[0].toDouble());
-        ptz_angle.setY(ptz_ang[1].toDouble());
+        ptz_angle.setY((-ptz_ang[1].toDouble()>-90)?-ptz_ang[1].toDouble():360-ptz_ang[1].toDouble());
         ptz_speed.setX(ptz_ang[2].toDouble());
-        ptz_speed.setY(ptz_ang[3].toDouble());
+        ptz_speed.setY(-ptz_ang[3].toDouble());
     }
 
     QJsonArray pos=station["pos"].toArray();
@@ -185,7 +184,7 @@ void VideoWidget::paintGL()
     QPainter painter(this);
     QMutexLocker lock(&m_mutex);
 
-    emit set_meta_f_z(d_frame_time,human_zoom);
+    emit set_meta_f_z(d_frame_time,zoomT.indexOf(raw_zoom));
     emit set_meta_a_p(ptz_angle,st_pos);
     emit set_meta_d(st_dist);
 
@@ -200,10 +199,10 @@ void VideoWidget::paint_overlay(QPainter* painter)
 {
     if(show_aim){
         draw_aim(painter,QPoint(rect().width() /2,rect().height()/2));
-        draw_test_marker(painter, ptz_angle, ptz_angle.toPointF(), getFOV(raw_zoom), size());
+        draw_test_marker(painter, ptz_angle, QPoint(0,0), getFOV(raw_zoom), size());
         draw_test_marker(painter, ptz_angle, QPoint(32,19), getFOV(raw_zoom), size());
         draw_test_marker(painter, ptz_angle, click_pos, getFOV(raw_zoom), size());
-
+        draw_degree(painter, ptz_angle, QPoint(11,10), QPoint(10,11), getFOV(raw_zoom), size());
         drawMotionVector(painter,ptz_speed);
     }
 
@@ -220,8 +219,9 @@ void VideoWidget::draw_text(QPainter * painter)
     font.setStyleHint(QFont::Monospace);
     painter->setFont(font);
     painter->setPen(QPen(green_overlay, 2));
-    painter->drawText(10, 30, QString("ZOOM :%1 x").arg(human_zoom  , 4, 'f', 1));
-    painter->drawText(10, 50, QString("FOCUS:%1 mm").arg(human_zoom*6, 4, 'f', 1));
+    qDebug()<<"zoomT"<<zoomT.indexOf(raw_zoom);
+    painter->drawText(10, 30, QString("ZOOM :%1 x").arg(zoomT.indexOf(raw_zoom), 4));
+    painter->drawText(10, 50, QString("FOCUS:%1 mm").arg(zoomT.indexOf(raw_zoom)*6, 4));
 }
 
 void VideoWidget::draw_aim(QPainter * painter,QPoint aim, QColor color)

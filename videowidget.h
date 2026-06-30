@@ -70,11 +70,10 @@ private:
     QQueue<QueuedFrame> m_frameQueue;
     QImage m_image;
     quint64 d_frame_time=0;
-    quint64 m_frame_time=0;
+    quint64 m_frame_time=-1;
     QSize curr_size;
     int save_frame_count=30;
     double raw_zoom=0;
-    double human_zoom=0;
 
     QVector3D st_angle=QVector3D(0,0,0);
     QVector2D ptz_angle=QVector2D(0,0);
@@ -99,6 +98,17 @@ private:
     void update_storage(Detection ogj);
     QImage findFrameById(int frameId);
 
+    void draw_degree(QPainter* painter, QVector2D camera_angle, QPointF one, QPointF two, QPointF fov, QSize image_size, QColor col=QColor(0xdd, 0, 0xdd, 0xaa)){
+        QPoint p1 = globalToLocal( camera_angle, one, fov, image_size);
+        QPoint p2 = globalToLocal( camera_angle, two, fov, image_size);
+        painter->save();
+        painter->setPen(QPen(col,2));
+        int r = 20;
+        painter->drawLine( p1.x(), p1.y(), p1.x(), p2.y());
+        painter->drawLine( p1.x(), p2.y(), p2.x(), p2.y());
+        painter->restore();
+    }
+
     void draw_test_marker(QPainter* painter,  QVector2D camera_angle, QPointF marker_angle, QPointF fov, QSize image_size, QColor col=QColor(0xdd, 0, 0xdd, 0xaa)){
         QPoint p = globalToLocal( camera_angle, marker_angle, fov, image_size);
         // если вышли за экран
@@ -114,7 +124,8 @@ private:
         painter->restore();
     }
     void drawMotionVector(QPainter* painter, QVector2D speed, QColor col=QColor(0xdd, 0xdd, 0, 0xaa)){
-        if (qFuzzyIsNull(speed.x()) && qFuzzyIsNull(speed.y())) return;
+        if (abs(speed.x())<1 && abs(speed.y())<1) return;
+        if (qFuzzyIsNull(speed.x()) && qFuzzyIsNull(-speed.y())) return;
         QPoint center(width()/2, height()/2);
         const double maxLen = 100.0;
         double len = std::hypot(speed.x(), speed.y());
@@ -126,7 +137,7 @@ private:
         }
         double drawLen = std::min(len * 5.0, maxLen);
         QPoint end(center.x() + nx * drawLen, center.y() - ny * drawLen);
-        painter->setPen(QPen(col, 3));
+        painter->setPen(QPen(col, 1));
         painter->drawLine(center, end);
         double angle = atan2(center.y() - end.y(),end.x() - center.x());
         const double head = 12;

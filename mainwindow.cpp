@@ -34,7 +34,11 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     sender = new CommandSender(this);
-    connect(ui->zoom_slider, &QSlider::sliderReleased, [=]() {sender->sendZoom(main_stream,zoom_human_to_camera(ui->zoom_slider->value()));});
+
+    connect(ui->zoomtest, &QDoubleSpinBox::valueChanged, [=](double var) {sender->sendZoom(main_stream,var);});
+    connect(ui->zoom_slider, &QSlider::sliderReleased, [=]() {sender->sendZoom(main_stream,zoomT[ui->zoom_slider->value()]);});
+    connect(ui->zoom_slider, &QSlider::sliderMoved, [=](int move) { ui->zoom_info->setText(QString::number(move,'d',1)+"x");});
+
     connect(ui->controls, &motion_controller::send_zoom,ui->zoom_slider,&QSlider::setValue);
 
     follower= new target_escort(this);
@@ -100,8 +104,8 @@ void MainWindow::try_to_connect(QStringList url_main)
     meta_port=url_main[2].toInt();
     rtcp_receiver_RGB->setUrl("rtsp://"+main_ip+":"+url_main[3]+"/rgb");
     rtcp_receiver_RGB->start();
-    rtcp_receiver_IR ->setUrl("rtsp://"+main_ip+":"+url_main[4]+"/ir");
-    rtcp_receiver_IR->start();
+//    rtcp_receiver_IR ->setUrl("rtsp://"+main_ip+":"+url_main[4]+"/ir");
+//    rtcp_receiver_IR->start();
 
     qDebug()<<"update stream"<<"rtsp://"<<main_ip+":"+url_main[3];
     qDebug()<<"update stream"<<"rtsp://"<<main_ip+":"+url_main[4];
@@ -115,9 +119,8 @@ void MainWindow::try_to_connect(QStringList url_main)
 void MainWindow::update_meta(int frame, double zoom)
 {
     ui->l_fps->setText(QString::number(frame/100000.0,'d',3));
-    qDebug()<<"ui zoom"<<zoom<<ui->zoom_slider->value()<<abs(zoom -ui->zoom_slider->value());
+//    qDebug()<<"ui zoom"<<zoom<<ui->zoom_slider->value()<<abs(zoom -ui->zoom_slider->value());
     if(abs(zoom -ui->zoom_slider->value())>0.1 && !ui->zoom_slider->hasFocus())ui->zoom_slider->setValue((int)zoom);
-    // ui->l_zoom->setText(QString::number(zoom,'d',3));
     ui->widget_cam_zoom->setEnabled(zoom!=0);
     ui->actionInitialize_rotator->setEnabled(zoom!=0);
     emit update_zoom(zoom);
@@ -162,7 +165,7 @@ void MainWindow::sendMoveToCommandPos(QPointF pos)
 void MainWindow::sendMoveToCommand(double pos_x, double pos_y, double speed_x, double speed_y)
 {
     if(speed_x==0 && speed_y==0 ) sender->sendCmd("stop");
-    else sender->sendMoveTo(QString("%0|%1|%2|%3").arg(pos_x).arg(pos_y).arg(speed_x).arg(speed_y));
+    else sender->sendMoveTo(QString("%0|%1|%2|%3").arg(pos_x).arg(-pos_y).arg(speed_x).arg(speed_y));
 }
 
 void MainWindow::update_list()
