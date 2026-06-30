@@ -80,6 +80,7 @@ private:
     QVector2D ptz_angle=QVector2D(0,0);
     QVector2D ptz_speed=QVector2D(0,0);
     QVector3D st_pos=QVector3D(0,0,0);
+    QPointF click_pos;
     double st_dist=-1;
 
     QVector<Detection> last_detection;

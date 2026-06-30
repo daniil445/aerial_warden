@@ -39,9 +39,10 @@ void VideoWidget::onImageClicked(QPoint p)
     double dy = p.y() - cy;
     double targetAz = ptz_angle.x() + dx * degPerPixelX;
     double targetEl = ptz_angle.y() - dy * degPerPixelY;
-    QPointF temp =QPointF(targetAz,targetEl);
+    click_pos =QPointF(targetAz,targetEl);
     qDebug()<< "Goto"<< targetAz<< targetEl;
-    emit moveToCommand(temp);
+
+    emit moveToCommand(click_pos);
 }
 
 void VideoWidget::setFrame(quint64 time,const QImage& img)
@@ -66,6 +67,8 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
 
 QImage VideoWidget::findFrameById(int frameId)
 {
+    qDebug()<<"m_frameQueue"<<frameId<<m_frameQueue.size();
+    if(frameId==-1)return m_frameQueue.dequeue().image;
     while (!m_frameQueue.isEmpty())
     {
         const QueuedFrame& m = m_frameQueue.head();
@@ -75,9 +78,9 @@ QImage VideoWidget::findFrameById(int frameId)
         }
         if (m.frameId == frameId)
             return m_frameQueue.dequeue().image;
-        break;
     }
-    return m_image;
+    if(m_frameQueue.size()!=0)return m_frameQueue.last().image;
+    else return m_image;
 }
 
 
@@ -199,6 +202,8 @@ void VideoWidget::paint_overlay(QPainter* painter)
         draw_aim(painter,QPoint(rect().width() /2,rect().height()/2));
         draw_test_marker(painter, ptz_angle, ptz_angle.toPointF(), getFOV(raw_zoom), size());
         draw_test_marker(painter, ptz_angle, QPoint(32,19), getFOV(raw_zoom), size());
+        draw_test_marker(painter, ptz_angle, click_pos, getFOV(raw_zoom), size());
+
         drawMotionVector(painter,ptz_speed);
     }
 
