@@ -75,18 +75,30 @@ inline QPointF getFOV(int zoom)
 {
     return QPointF(getHFOV(zoom),getVFOV(zoom));
 }
-
-inline QPoint globalToLocal( QVector2D camera_angle, QPointF target_angle, QPointF fov, QSize size)
+inline QPoint globalToLocal( const QVector2D& camera_angle, const QPointF& target_angle, const QPointF& fov, const QSize& size)
 {
-    double dAz = target_angle.x() -camera_angle.x();
-    double dEl =target_angle.y() - camera_angle.y();
-    while(dAz > 180) dAz -= 360;
-    while(dAz < -180) dAz += 360;
+    double dAz = target_angle.x() - camera_angle.x();
+    double dEl = target_angle.y() - camera_angle.y();
+    while (dAz > 180.0) dAz -= 360.0;
+    while (dAz < -180.0) dAz += 360.0;
     double nx = tan(qDegreesToRadians(dAz)) / tan(qDegreesToRadians(fov.x()/2.0));
-    double ny =tan(qDegreesToRadians(dEl)) / tan(qDegreesToRadians(fov.y()/2.0));
-    int px = size.width()/2 + nx * size.width()/2;
-    int py =size.height()/2 - ny * size.height()/2;
-    return QPoint(px,py);
+    double ny = tan(qDegreesToRadians(dEl)) / tan(qDegreesToRadians(fov.y()/2.0));
+    int px = qRound(size.width ()*0.5 + nx*size.width ()*0.5);
+    int py = qRound(size.height()*0.5 - ny*size.height()*0.5);
+    return QPoint(px, py);
+}
+
+inline QPointF localToGlobal( const QVector2D& camera_angle, const QPoint& pixel, const QPointF& fov, const QSize& size)
+{
+    double nx =(pixel.x() - size.width()*0.5) /(size.width()*0.5);
+    double ny =(size.height()*0.5 - pixel.y()) /(size.height()*0.5);
+    double dAz = qRadiansToDegrees( atan(nx *tan(qDegreesToRadians(fov.x()/2.0))));
+    double dEl = qRadiansToDegrees( atan( ny * tan(qDegreesToRadians(fov.y()/2.0))));
+    double az = camera_angle.x() + dAz;
+    double el = camera_angle.y() + dEl;
+    while (az >= 360.0) az -= 360.0;
+    while (az <    0.0) az += 360.0;
+    return QPointF(az, el);
 }
 // -------------------------------------------------------------------------------- struct
 
@@ -106,55 +118,13 @@ struct Detection
     QPoint get_center(){
         return box.center();
     }
-    QPoint get_local_center(QPointF coef){
-        return QPointF(box.center().x()*coef.x(),box.center().y()*coef.y()).toPoint();
+    QPointF display_coef;
+    QPoint get_local_center(){
+        return QPointF(box.center().x()*display_coef.x(),box.center().y()*display_coef.y()).toPoint();
     }
 
-    QPointF angle_center;// координаты центра в углах
-    QPointF angle_center_projective;
-    QPoint get_global_to_local_center(QPointF global_coors, QVector2D camera_angle,QPointF fov, QSize image_size){
-        double degPerPixelX =fov.x()/(double)image_size.width();
-        double degPerPixelY = fov.y()/(double)image_size.height();
-        double dx =(global_coors.x() - camera_angle.x())/ degPerPixelX;
-        double dy =(global_coors.y() - camera_angle.y()) / degPerPixelY;
-        int px =image_size.width()/2 + dx;
-        int py =image_size.height()/2 + dy;
-        //        qDebug()<<"get_global_to_local_center"<<get_name()<<image_size/2<<dx<<dy<<px<<py;
-        return QPoint(px,py);
-    }
-    void set_angle_center_projective(QVector2D camera_angle, QPoint pix_obj,QSize size,QPointF fov){
-        double nx =(pix_obj.x() - size.width()/2.0)/ (size.width()/2.0);
-        double ny =(pix_obj.y() - size.height()/2.0)/ (size.height()/2.0);
-        double dAz =qRadiansToDegrees(atan(nx * tan(qDegreesToRadians(fov.x()/2))));
-        double dEl = qRadiansToDegrees(atan(ny * tan(qDegreesToRadians(fov.y()/2))));
-        angle_center_projective.setX(camera_angle.x() + dAz);
-        angle_center_projective.setY(camera_angle.y() + dEl);
-    }
-    void set_angle_center(QVector2D global_coors, QPoint pix_obj, QPointF fov, QSize size){
-        //        double degPerPixelX = fov.x() / (double)size.width();
-        //        double degPerPixelY = fov.y() / (double)size.height();
-
-        //        double dx = pix_obj.x() - size.width()  / 2.0;
-        //        double dy = pix_obj.y() - size.height() / 2.0;
-
-        //        double objAz = global_coors.x() + dx * degPerPixelX;
-        //        double objEl = global_coors.y() + dy * degPerPixelY;
-
-        //        angle_center = QPointF(objAz, objEl);// заполнение координат центра в углах
-        //        qDebug()<<"set_angle_center"<<get_name()<<angle_center<<dx<<dy<<pix_obj;
-        double fx = size.width() /(2.0*tan(qDegreesToRadians(fov.x()/2.0)));
-        double fy =size.height() /(2.0*tan(qDegreesToRadians(fov.y()/2.0)));
-        double dx = pix_obj.x() - size.width()/2.0;
-        double dy = pix_obj.y() - size.height()/2.0;
-        double dAz = qRadiansToDegrees(  atan(dx/fx));
-        double dEl = qRadiansToDegrees( atan(dy/fy));
-
-        angle_center.setX(global_coors.x()+dAz);
-        angle_center.setY(global_coors.y()+dEl);
-    }
-
+    QPointF angle_center;
     bool kalman_init = false;
-
     double x[4];      // az, el, vaz, vel
     double P[4][4];   // ковариация
 };

@@ -56,7 +56,6 @@ protected:
     void paintGL() override;
     void initializeGL() override;
     void mousePressEvent(QMouseEvent *event) override;
-    void mouseMoveEvent(QMouseEvent *event) override;
 private slots:
     void onImageClicked(QPoint p);
 private:
@@ -74,7 +73,8 @@ private:
     quint64 m_frame_time=-1;
     QSize curr_size;
     int save_frame_count=30;
-    int zoom=1;
+    int zoom=-1;
+
 
     QVector3D st_angle=QVector3D(0,0,0);
     QVector2D ptz_angle=QVector2D(0,0);
@@ -82,6 +82,12 @@ private:
     QVector3D st_pos=QVector3D(0,0,0);
     QPointF click_pos;
     double st_dist=-1;
+
+    QElapsedTimer statTimer;
+    int frameCounter = 0;
+    int metaCounter = 0;
+    double fps = 0;
+    double pps = 0;
 
     QVector<Detection> last_detection;
     Detection main_obj;
@@ -99,20 +105,19 @@ private:
     void update_storage(Detection ogj);
     QImage findFrameById(int frameId);
 
-    void draw_degree(QPainter* painter, QVector2D camera_angle, QPointF one, QPointF two, QPointF fov, QSize image_size, QColor col=QColor(0xdd, 0, 0xdd, 0xaa)){
-        QPoint p1 = globalToLocal( camera_angle, one, fov, image_size);
-        QPoint p2 = globalToLocal( camera_angle, two, fov, image_size);
+    inline void draw_degree( QPainter* painter, const QVector2D& camera_angle, const QPointF& p1_deg, const QPointF& p2_deg, const QPointF& fov, const QSize& size, QColor col = QColor(0xdd,0,0xdd,0xaa))
+    {
+        QPoint p1 = globalToLocal(camera_angle, p1_deg, fov, size);
+        QPoint p2 =  globalToLocal( camera_angle, p2_deg, fov, size);
         painter->save();
         painter->setPen(QPen(col,2));
-        int r = 20;
-        painter->drawLine( p1.x(), p1.y(), p2.x(), p1.y());
-        painter->drawLine( p2.x(), p1.y(), p2.x(), p2.y());
+        painter->drawLine(p1.x(),p1.y(),p2.x(),p1.y());
+        painter->drawLine(p2.x(),p1.y(),p2.x(),p2.y());
         painter->restore();
     }
 
     void draw_test_marker(QPainter* painter,  QVector2D camera_angle, QPointF marker_angle, QPointF fov, QSize image_size, QColor col=QColor(0xdd, 0, 0xdd, 0xaa)){
         QPoint p = globalToLocal( camera_angle, marker_angle, fov, image_size);
-        // если вышли за экран
         if(p.x() < -100 || p.x() > image_size.width()+100) return;
         if(p.y() < -100 || p.y() > image_size.height()+100) return;
         painter->save();

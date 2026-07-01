@@ -147,14 +147,21 @@ QPointF target_escort::get_speed(QPointF percents)
 
 void target_escort::follow()
 {
-    update_storage();
+//    update_storage();
     Detection& temp = (*m_storage)[objct.get_name()];
     QPointF future = kalman_predict( temp, 0.2);     // прогноз на 200 мс вперед
-    qDebug()<<"algorythm future"<<future;
-       // emit move_to_object(future.x(),future.y(),5,5);
+    qDebug()<<"algorythm future"<<objct.get_name()<<"="<<temp.get_name()<<temp.angle_center<<future;
+    if(temp.id==-1)return;
+
+    QVector2D error(temp.angle_center - global_ang);
+    double dist = error.length();
+    double gain = 0.15;
+    double maxSpeed = 6.0;
+    double speed = maxSpeed * (1.0 - exp(-gain * dist));
+    emit move_to_object(temp.angle_center.x(),temp.angle_center.y(),speed,speed);
 
 //    if(!moving){
-        emit move_to_object(temp.angle_center_projective.x(),temp.angle_center_projective.y(),5,5);
+//        emit move_to_object(temp.angle_center_projective.x(),temp.angle_center_projective.y(),5,5);
 //        moving=true;
 //    }else{
 //         qDebug()<<"algorythm euals"<<temp.angle_center.toPoint()<<global_ang.toPoint();
