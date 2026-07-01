@@ -121,8 +121,8 @@ void MainWindow::update_meta(int frame, double zoom)
     ui->l_fps->setText(QString::number(frame/100000.0,'d',3));
 //    qDebug()<<"ui zoom"<<zoom<<ui->zoom_slider->value()<<abs(zoom -ui->zoom_slider->value());
     if(abs(zoom -ui->zoom_slider->value())>0.1 && !ui->zoom_slider->hasFocus())ui->zoom_slider->setValue((int)zoom);
-    ui->widget_cam_zoom->setEnabled(zoom!=0);
-    ui->actionInitialize_rotator->setEnabled(zoom!=0);
+    ui->widget_cam_zoom->setEnabled(zoom!=-1);
+    ui->actionInitialize_rotator->setEnabled(zoom!=-1);
     emit update_zoom(zoom);
 }
 

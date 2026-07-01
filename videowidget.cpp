@@ -184,7 +184,7 @@ void VideoWidget::paintGL()
     QPainter painter(this);
     QMutexLocker lock(&m_mutex);
 
-    emit set_meta_f_z(d_frame_time,zoomT.indexOf(raw_zoom));
+    emit set_meta_f_z(d_frame_time,findClosestZoom(raw_zoom));
     emit set_meta_a_p(ptz_angle,st_pos);
     emit set_meta_d(st_dist);
 
@@ -219,9 +219,9 @@ void VideoWidget::draw_text(QPainter * painter)
     font.setStyleHint(QFont::Monospace);
     painter->setFont(font);
     painter->setPen(QPen(green_overlay, 2));
-    qDebug()<<"zoomT"<<zoomT.indexOf(raw_zoom);
-    painter->drawText(10, 30, QString("ZOOM :%1 x").arg(zoomT.indexOf(raw_zoom), 4));
-    painter->drawText(10, 50, QString("FOCUS:%1 mm").arg(zoomT.indexOf(raw_zoom)*6, 4));
+    qDebug()<<"zoomT"<<findClosestZoom(raw_zoom);
+    painter->drawText(10, 30, QString("ZOOM :%1 x").arg(findClosestZoom(raw_zoom), 4));
+    painter->drawText(10, 50, QString("FOCUS:%1 mm").arg(findClosestZoom(raw_zoom)*6, 4));
 }
 
 void VideoWidget::draw_aim(QPainter * painter,QPoint aim, QColor color)

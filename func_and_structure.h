@@ -60,6 +60,38 @@ inline QPoint globalToLocal( QVector2D camera_angle, QPointF target_angle, QPoin
     return QPoint(px,py);
 }
 
+inline int findClosestZoom(double currentZoomPos)
+{
+    auto it = std::lower_bound(zoomT.begin(),zoomT.end(),currentZoomPos);
+    if (it == zoomT.begin())return 1;
+    if (it == zoomT.end())return zoomT.size();
+    int idx = std::distance(zoomT.begin(), it);
+    double left = zoomT[idx - 1];
+    double right = zoomT[idx];
+    if (std::abs(currentZoomPos - left) < std::abs(currentZoomPos - right))return idx;
+    return idx + 1;
+}
+
+
+// inline int findClosestZoom( double value)
+// {
+//     int bestIndex = 0;
+//     double bestDiff = std::abs(zoomT[0] - value);
+
+//     for (int i = 1; i < zoomT.size(); ++i)
+//     {
+//         double diff = std::abs(zoomT[i] - value);
+
+//         if (diff < bestDiff)
+//         {
+//             bestDiff = diff;
+//             bestIndex = i;
+//         }
+//     }
+
+//     return bestIndex;
+// }
+
 // -------------------------------------------------------------------------------- struct
 
 struct Detection
