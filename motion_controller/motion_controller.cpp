@@ -252,14 +252,13 @@ void motion_controller::update_aim(QVector2D ang,QVector3D pos)
     aim_y=ang.y();
 }
 
-void motion_controller::update_zoom(double val)
+void motion_controller::update_zoom(int zoom)
 {
-    connected=val!=0;
+    connected=true;
+    cam_zoom=zoom;
     this->setEnabled(connected);
     ui->l_mot_status->setText(connected?"Connected":"Disconnected");
-
     if(!connected) return;
-    cam_zoom=sqrt(val);
     x_speed=(ui->zoom_ratio->isChecked())?ui->sb_x_speed->value()/cam_zoom:ui->sb_x_speed->value();
     y_speed=(ui->zoom_ratio->isChecked())?ui->sb_y_speed->value()/cam_zoom:ui->sb_y_speed->value();
 }

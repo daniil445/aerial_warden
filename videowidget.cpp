@@ -29,19 +29,28 @@ void VideoWidget::mousePressEvent(QMouseEvent *event)
 
     QOpenGLWidget::mousePressEvent(event);
 }
+
+void VideoWidget::mouseMoveEvent(QMouseEvent *event)
+{
+    setFocus();
+    emit imageClicked(event->pos());
+
+    QOpenGLWidget::mouseMoveEvent(event);
+}
+
 void VideoWidget::onImageClicked(QPoint p)
 {
     int cx = width()/2;
     int cy = height()/2;
-    double degPerPixelX = getFOV(raw_zoom).x() / width();
-    double degPerPixelY = getFOV(raw_zoom).y() / height();
+    // double degPerPixelX = getFOV(raw_zoom).x() / width();
+    // double degPerPixelY = getFOV(raw_zoom).y() / height();
     double dx = p.x() - cx;
     double dy = p.y() - cy;
-    double targetAz = ptz_angle.x() + dx * degPerPixelX;
-    double targetEl = ptz_angle.y() - dy * degPerPixelY;
+    double targetAz = ptz_angle.x() + dx;// * degPerPixelX;
+    double targetEl = ptz_angle.y() - dy;// * degPerPixelY;
     click_pos =QPointF(targetAz,targetEl);
 //    qDebug()<< "Goto"<< targetAz<< targetEl;
-
+    update();
     emit moveToCommand(click_pos);
 }
 
@@ -90,7 +99,7 @@ void VideoWidget::setMeta(const QJsonObject &obj)
     QJsonObject camera =obj["rgb"].toObject();
     m_frame_time = camera["ts"].toInteger();
 //    qDebug()<<"setMeta "<<m_frame_time;
-    raw_zoom=camera["zoom"].toDouble();
+    zoom=camera["zoom"].toDouble();
 //    qDebug()<<"zooms"<<raw_zoom<<human_zoom<<zoom_human_to_camera(human_zoom);
     QJsonObject station =obj["st"].toObject();
 
@@ -134,8 +143,8 @@ void VideoWidget::work_with_storage(QJsonArray ai){
         QJsonArray rect =  var["box"].toArray();
         ai_obj.box= QRect(rect[0].toInt(), rect[1].toInt(), rect[2].toInt(), rect[3].toInt());
         if(ai_obj.classname!=-1){
-            ai_obj.set_angle_center(ptz_angle,ai_obj.get_center(),getFOV(raw_zoom),curr_size);
-            ai_obj.set_angle_center_projective(ptz_angle,ai_obj.get_center(),curr_size,getFOV(raw_zoom));
+            ai_obj.set_angle_center(ptz_angle,ai_obj.get_center(),getFOV(zoom),curr_size);
+            ai_obj.set_angle_center_projective(ptz_angle,ai_obj.get_center(),curr_size,getFOV(zoom));
         }
         update_storage(ai_obj);
     }
@@ -184,7 +193,7 @@ void VideoWidget::paintGL()
     QPainter painter(this);
     QMutexLocker lock(&m_mutex);
 
-    emit set_meta_f_z(d_frame_time,findClosestZoom(raw_zoom));
+    emit set_meta_f_z(d_frame_time,zoom);
     emit set_meta_a_p(ptz_angle,st_pos);
     emit set_meta_d(st_dist);
 
@@ -199,17 +208,17 @@ void VideoWidget::paint_overlay(QPainter* painter)
 {
     if(show_aim){
         draw_aim(painter,QPoint(rect().width() /2,rect().height()/2));
-        draw_test_marker(painter, ptz_angle, QPoint(0,0), getFOV(raw_zoom), size());
-        draw_test_marker(painter, ptz_angle, QPoint(32,19), getFOV(raw_zoom), size());
-        draw_test_marker(painter, ptz_angle, click_pos, getFOV(raw_zoom), size());
-        draw_degree(painter, ptz_angle, QPoint(11,10), QPoint(10,11), getFOV(raw_zoom), size());
+        draw_test_marker(painter, ptz_angle, QPoint(0,0), getFOV(zoom), size());
+        draw_test_marker(painter, ptz_angle, QPoint(32,19), getFOV(zoom), size());
+        draw_test_marker(painter, ptz_angle, click_pos, getFOV(zoom), size());
+        draw_degree(painter, ptz_angle, QPoint(11,10), QPoint(10,11), getFOV(zoom), size());
         drawMotionVector(painter,ptz_speed);
     }
 
     if(show_text)draw_text(painter);
     if(show_degree){
-        draw_azimuth_scale(painter,ptz_angle.x(),raw_zoom);
-        drawPitchScale(painter,ptz_angle.y(),raw_zoom);
+        draw_azimuth_scale(painter,ptz_angle.x(),zoom);
+        drawPitchScale(painter,ptz_angle.y(),zoom);
     }
 }
 
@@ -219,9 +228,8 @@ void VideoWidget::draw_text(QPainter * painter)
     font.setStyleHint(QFont::Monospace);
     painter->setFont(font);
     painter->setPen(QPen(green_overlay, 2));
-    qDebug()<<"zoomT"<<findClosestZoom(raw_zoom);
-    painter->drawText(10, 30, QString("ZOOM :%1 x").arg(findClosestZoom(raw_zoom), 4));
-    painter->drawText(10, 50, QString("FOCUS:%1 mm").arg(findClosestZoom(raw_zoom)*6, 4));
+    painter->drawText(10, 30, QString("ZOOM :%1 x").arg(zoom, 4));
+    painter->drawText(10, 50, QString("FOCUS:%1 mm").arg(zoom*6, 4));
 }
 
 void VideoWidget::draw_aim(QPainter * painter,QPoint aim, QColor color)
@@ -265,7 +273,7 @@ void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)
             if(temp.kalman_init)kalman_init(temp);
             QPointF filtered = kalman_update(temp,  temp.angle_center, 1.0/30.0);
 
-            QPointF tempo= temp.get_global_to_local_center(temp.angle_center,ptz_angle,getFOV(raw_zoom),curr_size);
+            QPointF tempo= temp.get_global_to_local_center(temp.angle_center,ptz_angle,getFOV(zoom),curr_size);
             draw_aim(painter,QPoint(tempo.x()*sx,tempo.y()*sy),red_overlay);
             draw_aim(painter,QPoint(0,0),gray_overlay);
             qDebug()<<temp.get_name()<<"filtered"<<filtered<<temp.angle_center;

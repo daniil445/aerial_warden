@@ -35,9 +35,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     sender = new CommandSender(this);
 
-    connect(ui->zoomtest, &QDoubleSpinBox::valueChanged, [=](double var) {sender->sendZoom(main_stream,var);});
-    connect(ui->zoom_slider, &QSlider::sliderReleased, [=]() {sender->sendZoom(main_stream,zoomT[ui->zoom_slider->value()]);});
-    connect(ui->zoom_slider, &QSlider::sliderMoved, [=](int move) { ui->zoom_info->setText(QString::number(move,'d',1)+"x");});
+//    connect(ui->zoomtest, &QDoubleSpinBox::valueChanged, [=](double var) {sender->sendZoom(main_stream,var);});
+//    connect(ui->zoom_slider, &QSlider::sliderReleased, [=]() {sender->sendZoom(main_stream,zoomT[qBound(1, ui->zoom_slider->value(), 50) - 1]);});
+    connect(ui->zoom_slider, &QSlider::valueChanged, [=](int move) {// int move=ui->zoom_slider->value();
+                                                               ui->zoom_info->setText(QString::number(move,'d',1)+"x");
+                                                               sender->sendZoom(main_stream, move);
+
+    });
 
     connect(ui->controls, &motion_controller::send_zoom,ui->zoom_slider,&QSlider::setValue);
 
@@ -65,11 +69,11 @@ MainWindow::MainWindow(QWidget *parent)
             // [=](int val) { qDebug()<<"val"<<val;ui->widget_cam->setCurrentIndex(val);});
 
     UDP_receiver = new CommandReceiver(this);
-    connect(this,&MainWindow::update_zoom,ui->controls, &motion_controller::update_zoom);
     connect(UDP_receiver, &CommandReceiver::metaObjectsReceived,ui->openGLWidget_RGB, &VideoWidget::setMeta);
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_f_z,this,&MainWindow::update_meta);
-    connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,this,&MainWindow::update_meta_pos);
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_f_z,follower,&target_escort::update_meta);
+    connect(this, &MainWindow::update_zoom,ui->controls, &motion_controller::update_zoom);
+    connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,this,&MainWindow::update_meta_pos);
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,follower,&target_escort::update_meta_pos);
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,ui->controls, &motion_controller::update_aim);
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_d,this,&MainWindow::update_distance);
@@ -116,11 +120,15 @@ void MainWindow::try_to_connect(QStringList url_main)
     sender->sendIp();
 }
 
-void MainWindow::update_meta(int frame, double zoom)
+void MainWindow::update_meta(int frame, int zoom)
 {
     ui->l_fps->setText(QString::number(frame/100000.0,'d',3));
 //    qDebug()<<"ui zoom"<<zoom<<ui->zoom_slider->value()<<abs(zoom -ui->zoom_slider->value());
-    if(abs(zoom -ui->zoom_slider->value())>0.1 && !ui->zoom_slider->hasFocus())ui->zoom_slider->setValue((int)zoom);
+    if(!ui->zoom_slider->isEnabled()){
+        ui->zoom_slider->setEnabled(true);
+        ui->zoom_slider->setValue((int)zoom);
+    }
+    update_zoom(zoom);
     ui->widget_cam_zoom->setEnabled(zoom!=-1);
     ui->actionInitialize_rotator->setEnabled(zoom!=-1);
     emit update_zoom(zoom);

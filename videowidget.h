@@ -35,7 +35,7 @@ public:
 signals:
     void update_list();
     void update_size(QSize size);
-    void set_meta_f_z(int frame, double zoom);
+    void set_meta_f_z(int frame, int zoom);
     void set_meta_a_p(QVector2D,QVector3D);
     void set_meta_d(double);
     void imageClicked(QPoint pos);
@@ -56,6 +56,7 @@ protected:
     void paintGL() override;
     void initializeGL() override;
     void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
 private slots:
     void onImageClicked(QPoint p);
 private:
@@ -73,7 +74,7 @@ private:
     quint64 m_frame_time=-1;
     QSize curr_size;
     int save_frame_count=30;
-    double raw_zoom=0;
+    int zoom=1;
 
     QVector3D st_angle=QVector3D(0,0,0);
     QVector2D ptz_angle=QVector2D(0,0);
@@ -104,8 +105,8 @@ private:
         painter->save();
         painter->setPen(QPen(col,2));
         int r = 20;
-        painter->drawLine( p1.x(), p1.y(), p1.x(), p2.y());
-        painter->drawLine( p1.x(), p2.y(), p2.x(), p2.y());
+        painter->drawLine( p1.x(), p1.y(), p2.x(), p1.y());
+        painter->drawLine( p2.x(), p1.y(), p2.x(), p2.y());
         painter->restore();
     }
 
@@ -154,15 +155,13 @@ private:
         const int centerX = width() / 2;
         const int leftX = centerX - scaleWidth / 2;
 
-        double hfov = getHFOV(cameraZoom); // ВАЖНО
-
         painter->setPen(QPen(green_overlay, 2));
         painter->drawLine(leftX, y, leftX + scaleWidth, y);
 
         QFontMetrics fm(painter->font());
 
         // адаптивный шаг делений
-        double step = hfov / 10.0; // 10 делений на экран
+        double step = cameraZoom / 10.0; // 10 делений на экран
         if (step < 1) step = 1;
         if (step > 30) step = 30;
 
@@ -174,10 +173,10 @@ private:
             while (delta > 180) delta -= 360;
             while (delta < -180) delta += 360;
 
-            if (std::abs(delta) > hfov / 2.0)
+            if (std::abs(delta) > getHFOV(cameraZoom) / 2.0)
                 continue;
 
-            double norm = delta / hfov;
+            double norm = delta / getHFOV(cameraZoom);
             int x = centerX + norm * scaleWidth;
 
             bool major = (fmod(deg, step * 3) < 0.001);

@@ -36,7 +36,7 @@ signals:
     void update_zoom(double);
 public slots:
     void try_to_connect(QStringList);
-    void update_meta(int frame, double zoom);
+    void update_meta(int frame, int zoom);
     void update_meta_pos(QVector2D,QVector3D);
     void update_distance(double);
     void sendMoveCommand(const QString& cmd, double speed, bool pressed);

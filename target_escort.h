@@ -33,7 +33,7 @@ public slots:
     void update_speed_x_y(double,double);
     void update_storage();
     void update_meta_pos(QVector2D,QVector3D);
-    void update_meta(int frame, double zoom);
+    void update_meta(int frame, int zoom);
 
 protected:
     void run() override;
