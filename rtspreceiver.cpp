@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDebug>
+#include <QDir>
 
 #include <gst/rtp/gstrtpbuffer.h>
 #include <gst/video/video.h>
@@ -11,11 +12,14 @@ RtspReceiver::RtspReceiver(QObject *parent)
     : QThread(parent)
 {
    auto base = QCoreApplication::applicationDirPath(); //for release
-   qputenv("PATH", (base + ";" + base + "/gstreamer-1.0").toUtf8());
+   QString gstPath = base + "/gstreamer-1.0";
+   if (QDir(gstPath).exists()){
+       qputenv("PATH", (base + ";" + base + "/gstreamer-1.0").toUtf8());
 
-   qputenv("GST_PLUGIN_PATH", (base + "/gstreamer-1.0").toUtf8());
-   qputenv("GST_PLUGIN_SYSTEM_PATH", (base + "/gstreamer-1.0").toUtf8());
-   qputenv("GST_REGISTRY_FORK", "no"); // важно для Windows debug
+       qputenv("GST_PLUGIN_PATH", (base + "/gstreamer-1.0").toUtf8());
+       qputenv("GST_PLUGIN_SYSTEM_PATH", (base + "/gstreamer-1.0").toUtf8());
+       qputenv("GST_REGISTRY_FORK", "no"); // важно для Windows debug
+   }
    gst_init(nullptr, nullptr);
 }
 
