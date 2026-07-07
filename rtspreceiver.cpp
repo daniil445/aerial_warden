@@ -10,15 +10,15 @@
 RtspReceiver::RtspReceiver(QObject *parent)
     : QThread(parent)
 {
-//    auto base = QCoreApplication::applicationDirPath(); for release
+   auto base = QCoreApplication::applicationDirPath(); //for release
+   qputenv("PATH", (base + ";" + base + "/gstreamer-1.0").toUtf8());
 
-//    qputenv("PATH", (base + ";" + base + "/gstreamer-1.0").toUtf8());
-
-//    qputenv("GST_PLUGIN_PATH", (base + "/gstreamer-1.0").toUtf8());
-//    qputenv("GST_PLUGIN_SYSTEM_PATH", (base + "/gstreamer-1.0").toUtf8());
-//    qputenv("GST_REGISTRY_FORK", "no"); // важно для Windows debug
-    gst_init(nullptr, nullptr);
+   qputenv("GST_PLUGIN_PATH", (base + "/gstreamer-1.0").toUtf8());
+   qputenv("GST_PLUGIN_SYSTEM_PATH", (base + "/gstreamer-1.0").toUtf8());
+   qputenv("GST_REGISTRY_FORK", "no"); // важно для Windows debug
+   gst_init(nullptr, nullptr);
 }
+
 
 RtspReceiver::~RtspReceiver()
 {
@@ -54,6 +54,18 @@ void RtspReceiver::run()
             "video/x-raw,format=RGB ! "
             "appsink name=sink sync=false emit-signals=true max-buffers=1 drop=true"
             ).arg(m_url);
+
+//    QString pipelineDesc =
+//        QString(
+//            "rtspsrc name=src location=\"%1\" protocols=tcp latency=0 ! "
+//            "rtph265depay ! "
+//            "h265parse ! "
+//            "avdec_h265 ! "
+//            "videoconvert ! "
+//            "video/x-raw,format=RGB ! "
+//            "appsink name=sink "
+//            "sync=false emit-signals=true max-buffers=1 drop=true"
+//        ).arg(m_url);
 
     GError *err = nullptr;
 
@@ -148,7 +160,7 @@ GstFlowReturn RtspReceiver::on_new_sample(GstAppSink *sink, gpointer user_data)
             );
 
         emit self->frameReady(self->m_lastSeq, img.copy());
-
+        qDebug()<<"frameFrame "<<self->m_lastSeq<<img.size();
         gst_buffer_unmap(buffer, &map);
     }
 
@@ -208,6 +220,7 @@ GstPadProbeReturn RtspReceiver::on_rtp_probe(
     GstBuffer *buffer = gst_pad_probe_info_get_buffer(info);
     if (!buffer)
         return GST_PAD_PROBE_OK;
+    GstClockTime pts = GST_BUFFER_PTS(buffer);
 
     GstRTPBuffer rtp = GST_RTP_BUFFER_INIT;
 
@@ -221,9 +234,9 @@ GstPadProbeReturn RtspReceiver::on_rtp_probe(
 
 
     gst_rtp_buffer_unmap(&rtp);
-
     self->m_lastSeq = ts;
-//    qDebug() << "RTP" << "seq =" << seq<< "ts =" << ts << "ssrc =" << ssrc<< "marker =" << marker<<gst_rtp_buffer_get_header_len(&rtp);
+
+//    if(marker)qDebug() << "RTP" << "seq =" << seq<< "ts =" << ts << "ssrc =" << ssrc<< "marker =" << marker<<gst_rtp_buffer_get_header_len(&rtp);
 
     return GST_PAD_PROBE_OK;
 }

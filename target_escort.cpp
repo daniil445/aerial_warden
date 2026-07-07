@@ -68,7 +68,7 @@ void target_escort::update_meta_pos(QVector2D ang, QVector3D pos)
     global_ang=QPointF(global_x_ang,global_y_ang);
 }
 
-void target_escort::update_meta(int frame, int zoom)
+void target_escort::update_meta(quint64 frame, int zoom)
 {
     zoom_state=zoom;
 }
@@ -90,7 +90,7 @@ void target_escort::run()
                 qDebug()<<"algorythm searched";
             }
         }
-        msleep(1000);
+        QThread::msleep(1000);
     }
 }
 

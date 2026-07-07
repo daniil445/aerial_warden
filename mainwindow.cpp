@@ -87,11 +87,19 @@ MainWindow::MainWindow(QWidget *parent)
     settings.setValue("obj_size" ,perfect_size);
 
 //    qputenv("GST_DEBUG", "4");
-//    qputenv("GST_PLUGIN_PATH",
-//            (QCoreApplication::applicationDirPath() + "/gstreamer-1.0").toUtf8());
-//    qputenv("GST_PLUGIN_SYSTEM_PATH",
-//            (QCoreApplication::applicationDirPath() + "/gstreamer-1.0").toUtf8());
-    // qApp->installEventFilter(this);
+//    qputenv("GST_PLUGIN_PATH", (QCoreApplication::applicationDirPath() + "/gstreamer-1.0").toUtf8());
+//    qputenv("GST_PLUGIN_SYSTEM_PATH", (QCoreApplication::applicationDirPath() + "/gstreamer-1.0").toUtf8());
+//    qApp->installEventFilter(this);
+
+//         auto base = QCoreApplication::applicationDirPath();//for release
+
+//         qputenv("PATH", (base + ";" + base + "/gstreamer-1.0").toUtf8());
+
+//         qputenv("GST_PLUGIN_PATH", (base + "/gstreamer-1.0").toUtf8());
+//         qputenv("GST_PLUGIN_SYSTEM_PATH", (base + "/gstreamer-1.0").toUtf8());
+//         qputenv("GST_REGISTRY_FORK", "no"); // важно для Windows debug
+//         gst_init(nullptr, nullptr);
+
 }
 
 MainWindow::~MainWindow()
@@ -120,9 +128,9 @@ void MainWindow::try_to_connect(QStringList url_main)
     sender->sendIp();
 }
 
-void MainWindow::update_meta(int frame, int zoom)
+void MainWindow::update_meta(quint64 frame, int zoom)
 {
-    ui->l_fps->setText(QString::number(frame/100000.0,'d',3));
+    ui->l_fps->setText(QString::number(frame/1000000000.0,'d',3));
 //    qDebug()<<"ui zoom"<<zoom<<ui->zoom_slider->value()<<abs(zoom -ui->zoom_slider->value());
     if(!ui->zoom_slider->isEnabled()){
         ui->zoom_slider->setEnabled(true);

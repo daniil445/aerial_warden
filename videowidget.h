@@ -9,6 +9,7 @@
 #include <QVector3D>
 #include <QVector2D>
 #include <QPainter>
+#include <QElapsedTimer>
 #include "func_and_structure.h"
 
 namespace Ui {
@@ -35,7 +36,7 @@ public:
 signals:
     void update_list();
     void update_size(QSize size);
-    void set_meta_f_z(int frame, int zoom);
+    void set_meta_f_z(quint64 frame, int zoom);
     void set_meta_a_p(QVector2D,QVector3D);
     void set_meta_d(double);
     void imageClicked(QPoint pos);
@@ -86,8 +87,10 @@ private:
     QElapsedTimer statTimer;
     int frameCounter = 0;
     int metaCounter = 0;
+    int paintCounter = 0;
     double fps = 0;
     double pps = 0;
+    double dps = 0;
 
     QVector<Detection> last_detection;
     Detection main_obj;
@@ -103,7 +106,7 @@ private:
     void draw_text(QPainter *painter);
     void work_with_storage(QJsonArray ai);
     void update_storage(Detection ogj);
-    QImage findFrameById(int frameId);
+    QImage findFrameById(qint64 frameId);
 
     inline void draw_degree( QPainter* painter, const QVector2D& camera_angle, const QPointF& p1_deg, const QPointF& p2_deg, const QPointF& fov, const QSize& size, QColor col = QColor(0xdd,0,0xdd,0xaa))
     {
@@ -227,6 +230,7 @@ private:
                           y - 15,
                           QString::number(headingDeg, 'f', 2) + "°");
     }
+
     void drawPitchScale(QPainter* painter,double pitchDeg,double cameraZoom)
     {
         const int x = width() - 50;

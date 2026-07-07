@@ -68,18 +68,20 @@ public:
                 !(iface.flags() & QNetworkInterface::IsRunning) ||
                 (iface.flags() & QNetworkInterface::IsLoopBack))
                 continue;
-
+            if (iface.type() != QNetworkInterface::Ethernet)
+                continue;
             for (const QNetworkAddressEntry& entry : iface.addressEntries())
             {
                 if (entry.ip().protocol() == QAbstractSocket::IPv4Protocol)
                 {
-                    // qDebug() << "Interface:" << iface.humanReadableName()
                     // << "IP:" << entry.ip().toString();
-                    if(iface.humanReadableName()=="Ethernet")ip=entry.ip().toString();
+                    ip=entry.ip().toString();
+                    qDebug() << "Interface:" << ip;
+                    break;
                 }
             }
         }
-        // if(ip=="")return;
+        if(ip=="")return;
         QJsonObject obj;
         obj["source"] = "user";
         obj["cmd"] = "client_ip";

@@ -15,10 +15,10 @@ void VideoWidget::initializeGL()
     initializeOpenGLFunctions();
     connect(this,&VideoWidget::imageClicked,this,&VideoWidget::onImageClicked);
     glClearColor(0, 0, 0, 1);
-    QImage img(1920, 1080, QImage::Format_RGB888);
-    img.fill(Qt::black);
-    setFrame(0,img);
-    m_image= img;
+//    QImage img(1920, 1080, QImage::Format_RGB888);
+//    img.fill(Qt::black);
+//    setFrame(0,img);
+//    m_image= img;
     statTimer.start();
 }
 
@@ -44,8 +44,10 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
     if(elapsed >= 1000){
        fps = frameCounter * 1000.0 / elapsed;
        pps = metaCounter  * 1000.0 / elapsed;
+       dps = paintCounter  * 1000.0 / elapsed;
        frameCounter = 0;
        metaCounter = 0;
+       paintCounter = 0;
        statTimer.restart();
     }
 
@@ -59,17 +61,18 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
 
     if(m_frameQueue.size() > MAX_QUEUE){
         QMutexLocker locker(&m_mutex);
-        QueuedFrame temp =m_frameQueue.dequeue();
-        m_image = temp.image;
-        d_frame_time = temp.frameId;
-        update();
+        /*QueuedFrame temp =*/m_frameQueue.dequeue();
+//        m_image = temp.image;
+//        d_frame_time = temp.frameId;
     }
+//    qDebug()<<"setFrame "<<time<<img.size()<<m_frameQueue.size();
+    update();
 
 }
 
-QImage VideoWidget::findFrameById(int frameId)
+QImage VideoWidget::findFrameById(qint64 frameId)
 {
-//    qDebug()<<"m_frameQueue"<<frameId<<m_frameQueue.size();
+    qDebug()<<"m_frameQueue"<<frameId<<m_frameQueue.size();
     if(frameId==-1 &&m_frameQueue.size()!=0)return m_frameQueue.dequeue().image;
     while (!m_frameQueue.isEmpty())
     {
@@ -81,7 +84,7 @@ QImage VideoWidget::findFrameById(int frameId)
         if (m.frameId == frameId)
             return m_frameQueue.dequeue().image;
     }
-    if(m_frameQueue.size()!=0)return m_frameQueue.last().image;
+    if(m_frameQueue.size()!=0)return m_frameQueue.dequeue().image;
     else return m_image;
 }
 
@@ -89,10 +92,10 @@ QImage VideoWidget::findFrameById(int frameId)
 void VideoWidget::setMeta(const QJsonObject &obj)
 {
     metaCounter++;
-//    qDebug()<<"meta"<<obj;
+    //qDebug()<<"meta"<<obj;
     QJsonObject camera =obj["rgb"].toObject();
     m_frame_time = camera["ts"].toInteger();
-//    qDebug()<<"setMeta "<<m_frame_time;
+    qDebug()<<"setMeta "<<m_frame_time;
     zoom=camera["zoom"].toDouble();
 //    qDebug()<<"zooms"<<raw_zoom<<human_zoom<<zoom_human_to_camera(human_zoom);
     QJsonObject station =obj["st"].toObject();
@@ -191,9 +194,12 @@ void VideoWidget::paintGL()
     emit set_meta_f_z(d_frame_time,zoom);
     emit set_meta_a_p(ptz_angle,st_pos);
     emit set_meta_d(st_dist);
-
+//    qDebug()<<"ready for read "<<m_frame_time;
     QImage imgToDraw = findFrameById(m_frame_time);
+//    if(m_frameQueue.size()==0)return;
+//    QImage imgToDraw = m_frameQueue.dequeue().image;
     painter.drawImage(rect(),imgToDraw);
+    paintCounter++;
     paint_overlay(&painter);
     paint_ai_objs(&painter,m_storage_move->values());
     paint_ai_objs(&painter,m_storage->values());
@@ -225,8 +231,9 @@ void VideoWidget::draw_text(QPainter * painter)
     painter->setPen(QPen(green_overlay, 2));
     painter->drawText(10, 30, QString("ZOOM :%1 x").arg(zoom, 3));
     painter->drawText(10, 50, QString("FOCUS:%1 mm").arg(zoom*6, 3));
-    painter->drawText(10, 70, QString("FPS: %1").arg(fps, 3,'d',1));
-    painter->drawText(10, 90, QString("PPS: %1").arg(pps, 3,'d',1));
+    painter->drawText(10, 120, QString("FPS: %1").arg(fps, 3,'d',1));
+    painter->drawText(10, 140, QString("PPS: %1").arg(pps, 3,'d',1));
+    painter->drawText(10, 160, QString("DPS: %1").arg(dps, 3,'d',1));
 
 }
 

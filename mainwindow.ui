@@ -32,10 +32,16 @@
     </property>
     <item row="0" column="3">
      <widget class="QTabWidget" name="widget_cam">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
       <widget class="QWidget" name="rgb">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <attribute name="title">
         <string>RGB</string>
        </attribute>
@@ -57,6 +63,9 @@
         </property>
         <item>
          <widget class="VideoWidget" name="openGLWidget_RGB">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
             <horstretch>0</horstretch>
