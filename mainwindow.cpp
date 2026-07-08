@@ -40,14 +40,13 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->zoom_slider, &QSlider::valueChanged, [=](int move) {// int move=ui->zoom_slider->value();
                                                                ui->zoom_info->setText(QString::number(move,'d',1)+"x");
                                                                sender->sendZoom(main_stream, move);
-
     });
 
     connect(ui->controls, &motion_controller::send_zoom,ui->zoom_slider,&QSlider::setValue);
 
     follower= new target_escort(this);
     //// linkers
-    follower->link_storages(&storage_move,&storage);
+    follower->link_storages(&storage_move,&storage,sender);
     ui->openGLWidget_RGB->link_storages(&storage_move,&storage);
     follower->start();
 
@@ -273,4 +272,16 @@ void MainWindow::on_btn_dist_clicked(bool checked)
     }
 }
 
+
+
+void MainWindow::on_debug_record_clicked(bool checked)
+{
+    if(checked){
+        ui->debug_record->setText("stop debug record");
+        sender->sendCmd("record","1");
+    }else{
+        ui->debug_record->setText("start debug record");
+        sender->sendCmd("record","0");
+    }
+}
 

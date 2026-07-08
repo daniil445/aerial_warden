@@ -1,6 +1,5 @@
 #pragma once
 
-#include "UDPSender.h"
 #include "UDPReceiver.h"
 #include <QKeyEvent>
 #include <QListWidget>
@@ -52,6 +51,8 @@ private slots:
     void on_obj_list_itemClicked(QListWidgetItem *item);
 
     void on_obj_list_move_itemClicked(QListWidgetItem *item);
+
+    void on_debug_record_clicked(bool checked);
 
 private:
     Ui::MainWindow *ui;

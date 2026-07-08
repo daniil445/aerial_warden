@@ -17,6 +17,8 @@
 
 // -------------------------------------------------------------------------------- convertors
 
+inline QStringList obj_name= {"Plane","Bird","Drone","Human","Car"};
+inline QVariantList obj_perfect_size= {78,114,26,36,56};
 
 inline double getHFOV(double zoom)
 {

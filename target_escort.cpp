@@ -153,6 +153,10 @@ void target_escort::follow()
     qDebug()<<"algorythm future"<<objct.get_name()<<"="<<temp.get_name()<<temp.angle_center<<future;
     if(temp.id==-1)return;
 
+    m_sender->sendTarget(QString("%1 %2").arg(obj_name.value(objct.classname)).arg(objct.id),
+                         QString("%1 %2").arg(objct.classname).arg(objct.id),
+                         temp.angle_center);
+
     QVector2D error(temp.angle_center - global_ang);
     double dist = error.length();
     double gain = 0.15;

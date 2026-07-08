@@ -1,5 +1,6 @@
 #pragma once
 
+#include "UDPSender.h"
 #include "func_and_structure.h"
 #include <QThread>
 #include <QObject>
@@ -16,10 +17,11 @@ public:
     QString scenario = "";
     void stop();
     void pause();
-    void link_storages(QMap<QString, Detection>* move, QMap<QString, Detection>* storage)
+    void link_storages(QMap<QString, Detection>* move, QMap<QString, Detection>* storage,CommandSender* sender)
     {
         m_storage = storage;
         m_storage_move = move;
+        m_sender= sender;
     }
 
 signals:
@@ -70,5 +72,6 @@ private:
     quint64 m_seq = 0;
 
     QMap<QString, Detection>* m_storage_move = nullptr;
-    QMap<QString, Detection>* m_storage = nullptr;   
+    QMap<QString, Detection>* m_storage = nullptr;
+    CommandSender* m_sender;
 };

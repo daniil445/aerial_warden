@@ -5,6 +5,8 @@
 #include <QNetworkInterface>
 #include <QHostAddress>
 #include <QDebug>
+#include <QVector2D>
+#include <QJsonArray>
 
 class CommandSender : public QObject
 {
@@ -31,11 +33,11 @@ public:
         QByteArray data = doc.toJson(QJsonDocument::Compact);
         socket->writeDatagram(data, QHostAddress(main_ip), main_port);
     }
-    void sendCmd(QString cmd){
+    void sendCmd(QString cmd,QString val=""){
         QJsonObject obj;
         obj["source"] = "user";
         obj["cmd"] = cmd;
-        obj["value"] = "";
+        obj["value"] = val;
         QJsonDocument doc(obj);
         QByteArray data = doc.toJson(QJsonDocument::Compact);
         socket->writeDatagram(data, QHostAddress(main_ip), main_port);
@@ -59,6 +61,24 @@ public:
         QByteArray data = doc.toJson(QJsonDocument::Compact);
         socket->writeDatagram(data, QHostAddress(main_ip), main_port);
     }
+    void sendTarget(QString name,QString dig_name, QPointF pos){
+        QJsonArray posArray;
+        posArray.append(pos.x());
+        posArray.append(pos.y());
+
+        QJsonObject target;
+        target["name"] = name;
+        target["ids"] = dig_name;
+        target["pos"] = posArray;
+
+        QJsonObject obj;
+        obj["source"] = "user";
+        obj["cmd"] = "fix_target";
+        obj["data"] =target;
+        QJsonDocument doc(obj);
+        QByteArray data = doc.toJson(QJsonDocument::Compact);
+    }
+
     void sendIp()
     {
         QString ip="";
