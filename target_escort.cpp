@@ -150,12 +150,12 @@ void target_escort::follow()
 //    update_storage();
     Detection& temp = (*m_storage)[objct.get_name()];
     QPointF future = kalman_predict( temp, 0.2);     // прогноз на 200 мс вперед
-    qDebug()<<"algorythm future"<<objct.get_name()<<"="<<temp.get_name()<<temp.angle_center<<future;
     if(temp.id==-1)return;
 
-    m_sender->sendTarget(QString("%1 %2").arg(obj_name.value(objct.classname)).arg(objct.id),
+    m_sender->sendTarget(objct.get_name(),
                          QString("%1 %2").arg(objct.classname).arg(objct.id),
                          temp.angle_center);
+    qDebug()<<"algorythm future"<<objct.get_name()<<"="<<temp.get_name()<<temp.angle_center<<future;
 
     QVector2D error(temp.angle_center - global_ang);
     double dist = error.length();

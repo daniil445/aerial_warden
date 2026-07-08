@@ -44,6 +44,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->controls, &motion_controller::send_zoom,ui->zoom_slider,&QSlider::setValue);
 
+    recorder = new VideoRecorder(this);
+    // connect(ui->openGLWidget_RGB, &VideoWidget::frameForRecord, recorder, &VideoRecorder::addFrame);
     follower= new target_escort(this);
     //// linkers
     follower->link_storages(&storage_move,&storage,sender);
@@ -283,5 +285,18 @@ void MainWindow::on_debug_record_clicked(bool checked)
         ui->debug_record->setText("start debug record");
         sender->sendCmd("record","0");
     }
+}
+
+
+void MainWindow::on_self_record_clicked(bool checked)
+{
+    if(checked){
+        ui->self_record->setText("stop self record");
+        recorder->start(this,30);
+    }else{
+        ui->self_record->setText("start self record");
+        recorder->stop();
+    }
+
 }
 

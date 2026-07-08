@@ -29,7 +29,7 @@
    </size>
   </property>
   <property name="focusPolicy">
-   <enum>Qt::NoFocus</enum>
+   <enum>Qt::FocusPolicy::NoFocus</enum>
   </property>
   <property name="windowTitle">
    <string>Form</string>
@@ -65,16 +65,16 @@
       </size>
      </property>
      <property name="tabPosition">
-      <enum>QTabWidget::North</enum>
+      <enum>QTabWidget::TabPosition::North</enum>
      </property>
      <property name="tabShape">
-      <enum>QTabWidget::Rounded</enum>
+      <enum>QTabWidget::TabShape::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <property name="elideMode">
-      <enum>Qt::ElideLeft</enum>
+      <enum>Qt::TextElideMode::ElideLeft</enum>
      </property>
      <property name="usesScrollButtons">
       <bool>true</bool>
@@ -142,8 +142,11 @@
          </item>
          <item>
           <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Vertical</enum>
+           </property>
            <property name="sizeType">
-            <enum>QSizePolicy::Preferred</enum>
+            <enum>QSizePolicy::Policy::Preferred</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -207,6 +210,9 @@
         <layout class="QGridLayout" name="gridLayout_7">
          <item row="2" column="0">
           <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Orientation::Vertical</enum>
+           </property>
            <property name="sizeHint" stdset="0">
             <size>
              <width>40</width>
@@ -225,7 +231,7 @@
          <item row="3" column="0">
           <widget class="QDoubleSpinBox" name="ds_move_y">
            <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
+            <enum>Qt::FocusPolicy::NoFocus</enum>
            </property>
            <property name="decimals">
             <number>3</number>
@@ -251,7 +257,7 @@
          <item row="1" column="0">
           <widget class="QDoubleSpinBox" name="ds_move_x">
            <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
+            <enum>Qt::FocusPolicy::NoFocus</enum>
            </property>
            <property name="decimals">
             <number>3</number>
@@ -340,7 +346,7 @@
             </size>
            </property>
            <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
+            <enum>Qt::FocusPolicy::NoFocus</enum>
            </property>
            <property name="decimals">
             <number>2</number>
@@ -388,10 +394,10 @@
             <number>100</number>
            </property>
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="tickPosition">
-            <enum>QSlider::NoTicks</enum>
+            <enum>QSlider::TickPosition::NoTicks</enum>
            </property>
           </widget>
          </item>
@@ -417,7 +423,7 @@
             </size>
            </property>
            <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
+            <enum>Qt::FocusPolicy::NoFocus</enum>
            </property>
            <property name="decimals">
             <number>2</number>
@@ -441,7 +447,7 @@
            <item>
             <spacer name="horizontalSpacer_3">
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -461,7 +467,7 @@
            <item>
             <spacer name="horizontalSpacer">
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -483,7 +489,7 @@
          <item row="4" column="0">
           <widget class="Line" name="line">
            <property name="orientation">
-            <enum>Qt::Vertical</enum>
+            <enum>Qt::Orientation::Vertical</enum>
            </property>
           </widget>
          </item>

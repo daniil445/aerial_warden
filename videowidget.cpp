@@ -213,6 +213,11 @@ void VideoWidget::paintGL()
     paint_overlay(&painter);
     paint_ai_objs(&painter,m_storage_move->values());
     paint_ai_objs(&painter,m_storage->values());
+
+    if(m_recording)
+    {
+        frameForRecord(grabFramebuffer());
+    }
 }
 
 void VideoWidget::paint_overlay(QPainter* painter)

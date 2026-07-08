@@ -10,6 +10,7 @@
 #include <RtspReceiver.h>
 #include <target_escort.h>
 #include <conn_settings.h>
+#include <VideoRecorder.h>
 
 
 QT_BEGIN_NAMESPACE
@@ -54,6 +55,8 @@ private slots:
 
     void on_debug_record_clicked(bool checked);
 
+    void on_self_record_clicked(bool checked);
+
 private:
     Ui::MainWindow *ui;
 
@@ -63,6 +66,7 @@ private:
     CommandReceiver* UDP_receiver;
     CommandSender* sender;
     target_escort* follower;
+    VideoRecorder* recorder;
 
     QMap <QString,Detection> storage;
     QMap <QString,Detection> storage_move;

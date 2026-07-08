@@ -33,6 +33,8 @@ public:
     bool show_aim =true;
     bool show_degree =true;
     bool show_text =true;
+
+    bool m_recording=false;
 signals:
     void update_list();
     void update_size(QSize size);
@@ -41,7 +43,7 @@ signals:
     void set_meta_d(double);
     void imageClicked(QPoint pos);
     void moveToCommand(QPointF);
-
+    void frameForRecord(const QImage &img);
 
 public slots:
     void setFrame(quint64 name,const QImage& img);
@@ -50,7 +52,12 @@ public slots:
     void link_storages(QMap<QString, Detection>* move, QMap<QString, Detection>* storage)
     {
         m_storage = storage;
-        m_storage_move = move;
+        m_storage_move = move;    
+    }
+
+    void setRecording(bool value)
+    {
+        m_recording=value;
     }
 
 protected:

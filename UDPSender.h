@@ -73,10 +73,12 @@ public:
 
         QJsonObject obj;
         obj["source"] = "user";
-        obj["cmd"] = "fix_target";
+        obj["cmd"] = "target";
         obj["data"] =target;
         QJsonDocument doc(obj);
         QByteArray data = doc.toJson(QJsonDocument::Compact);
+        qDebug() << "sendTarget:" << data;
+        socket->writeDatagram(data, QHostAddress(main_ip), main_port);
     }
 
     void sendIp()

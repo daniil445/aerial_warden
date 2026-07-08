@@ -490,6 +490,19 @@
             <property name="text">
              <string>start debug record</string>
             </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="self_record">
+            <property name="text">
+             <string>start self record</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
          </layout>
