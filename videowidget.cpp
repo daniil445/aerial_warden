@@ -55,15 +55,13 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
     qf.frameId = time;
     qf.image = img.copy();
     curr_size=img.size();
+//    qDebug()<<"setFrame "<<time;
     QMutexLocker locker(&m_queueMutex);
-
     m_frameQueue.enqueue(qf);
 
     if(m_frameQueue.size() > MAX_QUEUE){
         QMutexLocker locker(&m_mutex);
-        /*QueuedFrame temp =*/m_frameQueue.dequeue();
-//        m_image = temp.image;
-//        d_frame_time = temp.frameId;
+        m_frameQueue.dequeue();
     }
 //    qDebug()<<"setFrame "<<time<<img.size()<<m_frameQueue.size();
     update();
@@ -72,20 +70,30 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
 
 QImage VideoWidget::findFrameById(qint64 frameId)
 {
-    qDebug()<<"m_frameQueue"<<frameId<<m_frameQueue.size();
-    if(frameId==-1 &&m_frameQueue.size()!=0)return m_frameQueue.dequeue().image;
+    QMutexLocker locker(&m_queueMutex);
+    QImage lastFrame;
     while (!m_frameQueue.isEmpty())
     {
-        const QueuedFrame& m = m_frameQueue.head();
-        if (m.frameId < frameId) {
+        const QueuedFrame &frame = m_frameQueue.head();
+        lastFrame = frame.image;
+        if(frame.frameId < frameId){
             m_frameQueue.dequeue();
             continue;
         }
-        if (m.frameId == frameId)
-            return m_frameQueue.dequeue().image;
+
+        if(frame.frameId == frameId) {
+            m_lastImage = frame.image;
+            m_frameQueue.dequeue();
+            return m_lastImage;
+        }
+        break;
     }
-    if(m_frameQueue.size()!=0)return m_frameQueue.dequeue().image;
-    else return m_image;
+
+    if(!lastFrame.isNull()){
+        m_lastImage = lastFrame;
+        return m_lastImage;
+    }
+    return m_lastImage;
 }
 
 
@@ -95,9 +103,10 @@ void VideoWidget::setMeta(const QJsonObject &obj)
     //qDebug()<<"meta"<<obj;
     QJsonObject camera =obj["rgb"].toObject();
     m_frame_time = camera["ts"].toInteger();
-    qDebug()<<"setMeta "<<m_frame_time;
+//    qDebug()<<"setMeta  "<<debugFrameQueue().contains(QString::number(m_frame_time,'d',0))
+//           <<QString::number(m_frame_time,'d',0)<<"|"<<debugFrameQueue()<<"||"
+//          <<(debugFrameQueue().split(' ').last().toLongLong()-m_frame_time)/100000.0;
     zoom=camera["zoom"].toDouble();
-//    qDebug()<<"zooms"<<raw_zoom<<human_zoom<<zoom_human_to_camera(human_zoom);
     QJsonObject station =obj["st"].toObject();
 
     QJsonArray st_ang=station["gyro"].toArray();
@@ -132,7 +141,7 @@ void VideoWidget::setMeta(const QJsonObject &obj)
 }
 
 void VideoWidget::work_with_storage(QJsonArray ai){
-    QPointF coef = QPointF(width()  / double(m_image.width()), height() / double(m_image.height()));
+    QPointF coef = QPointF(width()  / double(m_lastImage.width()), height() / double(m_lastImage.height()));
     for (const QJsonValue& var : ai){
         Detection ai_obj;
         ai_obj.classname=var["class"].toInt();
@@ -189,15 +198,16 @@ void VideoWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT);
     QPainter painter(this);
+//    qDebug()<<"ready for read "<<m_frame_time;
     QMutexLocker lock(&m_mutex);
 
-    emit set_meta_f_z(d_frame_time,zoom);
+    emit set_meta_f_z(m_frame_time,zoom);
     emit set_meta_a_p(ptz_angle,st_pos);
     emit set_meta_d(st_dist);
-//    qDebug()<<"ready for read "<<m_frame_time;
     QImage imgToDraw = findFrameById(m_frame_time);
 //    if(m_frameQueue.size()==0)return;
 //    QImage imgToDraw = m_frameQueue.dequeue().image;
+//    findFrameById();
     painter.drawImage(rect(),imgToDraw);
     paintCounter++;
     paint_overlay(&painter);

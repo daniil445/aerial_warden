@@ -164,7 +164,7 @@ GstFlowReturn RtspReceiver::on_new_sample(GstAppSink *sink, gpointer user_data)
             );
 
         emit self->frameReady(self->m_lastSeq, img.copy());
-        qDebug()<<"frameFrame "<<self->m_lastSeq<<img.size();
+//        qDebug()<<"frameFrame "<<self->m_lastSeq<<img.size();
         gst_buffer_unmap(buffer, &map);
     }
 

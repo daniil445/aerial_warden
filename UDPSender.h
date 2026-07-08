@@ -75,7 +75,7 @@ public:
                 if (entry.ip().protocol() == QAbstractSocket::IPv4Protocol)
                 {
                     // << "IP:" << entry.ip().toString();
-                    ip=entry.ip().toString();
+                    if(entry.ip().toString().contains("192.168.26"))ip=entry.ip().toString();
                     qDebug() << "Interface:" << ip;
                     break;
                 }

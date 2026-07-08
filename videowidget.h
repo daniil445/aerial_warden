@@ -66,10 +66,21 @@ private:
     QMutex m_mutex;
 
     QMutex m_queueMutex;
-    int MAX_QUEUE=3;
+    int MAX_QUEUE=5;
     // QQueue<QueuedMeta> m_metaQueue;
     QQueue<QueuedFrame> m_frameQueue;
-    QImage m_image;
+    QString debugFrameQueue()
+    {
+        QMutexLocker locker(&m_queueMutex);
+        QStringList ids;
+        for (const QueuedFrame& frame : m_frameQueue)
+        {
+            ids << QString::number(frame.frameId);
+        }
+        return ids.join(" ");
+    }
+    QImage m_lastImage;
+
     quint64 d_frame_time=0;
     quint64 m_frame_time=-1;
     QSize curr_size;
