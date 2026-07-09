@@ -45,7 +45,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->controls, &motion_controller::send_zoom,ui->zoom_slider,&QSlider::setValue);
 
     recorder = new VideoRecorder(this);
-    // connect(ui->openGLWidget_RGB, &VideoWidget::frameForRecord, recorder, &VideoRecorder::addFrame);
+    connect(&recordTimer,&QTimer::timeout,this,&MainWindow::recordTick);
+    m_recordFrame=QImage(size(),QImage::Format_RGB888);
+
     follower= new target_escort(this);
     //// linkers
     follower->link_storages(&storage_move,&storage,sender);
@@ -127,6 +129,23 @@ void MainWindow::try_to_connect(QStringList url_main)
     UDP_receiver->bind(main_ip,meta_port);
     sender->sendAddress(main_ip,main_port);
     sender->sendIp();
+}
+
+void MainWindow::recordTick()
+{
+    if(recorder->isRecording())recorder->writeFrame(composeRecorderFrame());
+}
+
+QImage MainWindow::composeRecorderFrame()
+{
+    QImage frame = this->grab().toImage().convertToFormat(QImage::Format_RGB888);
+    QPoint pos =ui->openGLWidget_RGB->mapTo(this,QPoint(0,0));
+    QPainter painter(&frame);
+    painter.drawImage(pos, ui->openGLWidget_RGB->grabFramebuffer());
+    painter.end();
+    if(frame.size()!=m_recordSize)
+        frame=frame.scaled( m_recordSize,Qt::IgnoreAspectRatio, Qt::FastTransformation);
+    return frame;
 }
 
 void MainWindow::update_meta(quint64 frame, int zoom)
@@ -292,9 +311,14 @@ void MainWindow::on_self_record_clicked(bool checked)
 {
     if(checked){
         ui->self_record->setText("stop self record");
-        recorder->start(this,30);
+        m_recordSize=this->grab().size();
+        m_recordSize.setWidth(m_recordSize.width() & ~1);
+        m_recordSize.setHeight(m_recordSize.height() & ~1);
+        recorder->start(m_recordSize,30);
+        recordTimer.start(33);
     }else{
         ui->self_record->setText("start self record");
+        recordTimer.stop();
         recorder->stop();
     }
 

@@ -2,7 +2,7 @@
 #include <QSettings>
 
 target_escort::target_escort(QObject* parent)
-        : QThread(parent)
+    : QThread(parent)
 {
     objct.box=QRect(30,30,100,100);
     objct.classname=123;
@@ -40,6 +40,10 @@ void target_escort::update_focus(Detection focus)
         objct.old=focus.old;
         objct.prec=focus.prec;
         objct.box=focus.box;
+    }else{
+        m_sender->sendTarget(objct.get_name(),
+                             -1,
+                             QPointF(0,0));
     }
 
 }
@@ -89,6 +93,8 @@ void target_escort::run()
                 emit move_by_object(QString("%0|%1").arg(x_speed).arg(0));
                 qDebug()<<"algorythm searched";
             }
+        }else if(scenario==""){
+            //            m_sender->sendTarget(objct.get_name(), QString("%1 %2").arg(0).arg(-1), QPointF(0,0));
         }
         QThread::msleep(1000);
     }
@@ -113,13 +119,13 @@ void target_escort::play_test()
                     emit zoom_to_object(zoom_state+1);
                     play_scan_x_pos=true;
                 }
-//                 qDebug()<<"zooming"<<zoom_state;
+                //                 qDebug()<<"zooming"<<zoom_state;
             }
         }else{
             if(pow(global_y_ang-340.0,2)<0.01){
                 emit move_by_object(QString("%0|%1").arg(x_speed).arg(0));
-                 qDebug()<<"go to y";
-                 play_scan_y_pos=true;
+                qDebug()<<"go to y";
+                play_scan_y_pos=true;
             }else{
 
             }
@@ -147,30 +153,32 @@ QPointF target_escort::get_speed(QPointF percents)
 
 void target_escort::follow()
 {
-//    update_storage();
+    //    update_storage();
     Detection& temp = (*m_storage)[objct.get_name()];
     QPointF future = kalman_predict( temp, 0.2);     // прогноз на 200 мс вперед
-    if(temp.id==-1)return;
+    if(temp.id==-1){
+        m_sender->sendTarget(objct.get_name(), -1, QPointF(0,0));
+        return;
+    }
 
-    m_sender->sendTarget(objct.get_name(),
-                         QString("%1 %2").arg(objct.classname).arg(objct.id),
-                         temp.angle_center);
-    qDebug()<<"algorythm future"<<objct.get_name()<<"="<<temp.get_name()<<temp.angle_center<<future;
+    m_sender->sendTarget(objct.get_name(), objct.id, temp.angle_center);
+    //    qDebug()<<"sendTarget"<<objct.get_name()<<"="<<temp.get_name()<<temp.angle_center<<future;
 
     QVector2D error(temp.angle_center - global_ang);
     double dist = error.length();
     double gain = 0.15;
     double maxSpeed = 6.0;
     double speed = maxSpeed * (1.0 - exp(-gain * dist));
+    qDebug()<<"move_to object"<<objct.get_name()<<temp.angle_center;
     emit move_to_object(temp.angle_center.x(),temp.angle_center.y(),speed,speed);
 
-//    if(!moving){
-//        emit move_to_object(temp.angle_center_projective.x(),temp.angle_center_projective.y(),5,5);
-//        moving=true;
-//    }else{
-//         qDebug()<<"algorythm euals"<<temp.angle_center.toPoint()<<global_ang.toPoint();
-//        if(temp.angle_center.toPoint()==global_ang.toPoint())moving=false;
-//    }
+    //    if(!moving){
+    //        emit move_to_object(temp.angle_center_projective.x(),temp.angle_center_projective.y(),5,5);
+    //        moving=true;
+    //    }else{
+    //         qDebug()<<"algorythm euals"<<temp.angle_center.toPoint()<<global_ang.toPoint();
+    //        if(temp.angle_center.toPoint()==global_ang.toPoint())moving=false;
+    //    }
     if(follow_zoom)follow_by_zoom(objct);
 }
 
