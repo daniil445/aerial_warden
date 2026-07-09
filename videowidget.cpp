@@ -68,10 +68,11 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
 
 }
 
+
 QImage VideoWidget::findFrameById(qint64 frameId)
 {
     QMutexLocker locker(&m_queueMutex);
-    QImage lastFrame(size(), QImage::Format_RGB888);
+    QImage lastFrame;
     while (!m_frameQueue.isEmpty())
     {
         const QueuedFrame &frame = m_frameQueue.head();
@@ -89,14 +90,11 @@ QImage VideoWidget::findFrameById(qint64 frameId)
         break;
     }
 
-
-    lastFrame.fill(Qt::black);
-
-    QPainter painter(&lastFrame);
-    painter.setPen(Qt::red);
-    painter.drawText(size().width()/2+100,size().height()/2,"NO VIDEO");
-    painter.end();
-    return lastFrame;
+    if(!lastFrame.isNull()){
+        m_lastImage = lastFrame;
+        return m_lastImage;
+    }
+    return m_lastImage;
 }
 
 
@@ -213,11 +211,6 @@ void VideoWidget::paintGL()
     paint_overlay(&painter);
     paint_ai_objs(&painter,m_storage_move->values());
     paint_ai_objs(&painter,m_storage->values());
-
-    if(m_recording)
-    {
-        frameForRecord(grabFramebuffer());
-    }
 }
 
 void VideoWidget::paint_overlay(QPainter* painter)
