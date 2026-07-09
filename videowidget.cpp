@@ -71,7 +71,7 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
 QImage VideoWidget::findFrameById(qint64 frameId)
 {
     QMutexLocker locker(&m_queueMutex);
-    QImage lastFrame;
+    QImage lastFrame(size(), QImage::Format_RGB888);
     while (!m_frameQueue.isEmpty())
     {
         const QueuedFrame &frame = m_frameQueue.head();
@@ -89,11 +89,14 @@ QImage VideoWidget::findFrameById(qint64 frameId)
         break;
     }
 
-    if(!lastFrame.isNull()){
-        m_lastImage = lastFrame;
-        return m_lastImage;
-    }
-    return m_lastImage;
+
+    lastFrame.fill(Qt::black);
+
+    QPainter painter(&lastFrame);
+    painter.setPen(Qt::red);
+    painter.drawText(size().width()/2+100,size().height()/2,"NO VIDEO");
+    painter.end();
+    return lastFrame;
 }
 
 
@@ -205,9 +208,6 @@ void VideoWidget::paintGL()
     emit set_meta_a_p(ptz_angle,st_pos);
     emit set_meta_d(st_dist);
     QImage imgToDraw = findFrameById(m_frame_time);
-//    if(m_frameQueue.size()==0)return;
-//    QImage imgToDraw = m_frameQueue.dequeue().image;
-//    findFrameById();
     painter.drawImage(rect(),imgToDraw);
     paintCounter++;
     paint_overlay(&painter);
@@ -244,8 +244,8 @@ void VideoWidget::draw_text(QPainter * painter)
     font.setWeight(QFont::Bold);
     painter->setFont(font);
     painter->setPen(QPen(green_overlay, 2));
-    painter->drawText(10, 30, QString("ZOOM :%1 x").arg(zoom, 3));
-    painter->drawText(10, 50, QString("FOCUS:%1 mm").arg(zoom*6, 3));
+    painter->drawText(10, 30,  QString("ZOOM :%1 x").arg(zoom, 3));
+    painter->drawText(10, 50,  QString("FOCUS:%1 mm").arg(zoom*6, 3));
     painter->drawText(10, 120, QString("FPS: %1").arg(fps, 3,'d',1));
     painter->drawText(10, 140, QString("PPS: %1").arg(pps, 3,'d',1));
     painter->drawText(10, 160, QString("DPS: %1").arg(dps, 3,'d',1));

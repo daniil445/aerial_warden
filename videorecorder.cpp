@@ -160,25 +160,74 @@ void VideoRecorder::stop()
     destroyPipeline();
 }
 
+// void VideoRecorder::grabFrame()
+// {
+//     if(!m_running||!m_window||!m_appsrc)
+//         return;
+//     QImage img=m_window->grab().toImage().convertToFormat(QImage::Format_RGB888);
+//     if(img.isNull()) return;
+//     int size=img.sizeInBytes();
+//     GstBuffer *buffer=gst_buffer_new_allocate(nullptr,size,nullptr);
+//     GstMapInfo map;
+//     if(!gst_buffer_map(buffer,&map,GST_MAP_WRITE))
+//     {
+//         gst_buffer_unref(buffer);
+//         return;
+//     }
+//     memcpy(map.data,img.constBits(), size);
+//     gst_buffer_unmap(buffer,&map);
+//     GST_BUFFER_PTS(buffer)=gst_util_uint64_scale( m_frame, GST_SECOND, m_fps);
+//     GST_BUFFER_DURATION(buffer)= gst_util_uint64_scale( 1, GST_SECOND, m_fps);
+//     GstFlowReturn ret= gst_app_src_push_buffer(GST_APP_SRC(m_appsrc),buffer);
+//     if(ret!=GST_FLOW_OK)
+//     {
+//         qDebug()<<"push buffer error"<<ret;
+//         stop();
+//         return;
+//     }
+//     m_frame++;
+// }
 void VideoRecorder::grabFrame()
 {
-    if(!m_running||!m_window||!m_appsrc)
+    if(!m_running||!m_appsrc)
         return;
-    QImage img=m_window->grab().toImage().convertToFormat(QImage::Format_RGB888);
-    if(img.isNull()) return;
+    QImage img(QSize(800,600), QImage::Format_RGB888);
+    img.fill(Qt::black);
+    QMutexLocker locker(&m_frameMutex);
+    if(!m_currentFrame.isNull())img=m_currentFrame;
+
+    img=img.convertToFormat(QImage::Format_RGB888);
     int size=img.sizeInBytes();
-    GstBuffer *buffer=gst_buffer_new_allocate(nullptr,size,nullptr);
+    GstBuffer *buffer= gst_buffer_new_allocate(nullptr,size,nullptr);
     GstMapInfo map;
     if(!gst_buffer_map(buffer,&map,GST_MAP_WRITE))
     {
         gst_buffer_unref(buffer);
         return;
     }
-    memcpy(map.data,img.constBits(), size);
+    for(int y=0;y<img.height();y++)
+    {
+        memcpy(
+            map.data + y*img.width()*3,
+            img.constScanLine(y),
+            img.width()*3
+            );
+    }
     gst_buffer_unmap(buffer,&map);
-    GST_BUFFER_PTS(buffer)=gst_util_uint64_scale( m_frame, GST_SECOND, m_fps);
-    GST_BUFFER_DURATION(buffer)= gst_util_uint64_scale( 1, GST_SECOND, m_fps);
-    GstFlowReturn ret= gst_app_src_push_buffer(GST_APP_SRC(m_appsrc),buffer);
+    GST_BUFFER_PTS(buffer)=
+        gst_util_uint64_scale(
+            m_frame,
+            GST_SECOND,
+            m_fps);
+    GST_BUFFER_DURATION(buffer)=
+        gst_util_uint64_scale(
+            1,
+            GST_SECOND,
+            m_fps);
+    GstFlowReturn ret=
+        gst_app_src_push_buffer(
+            GST_APP_SRC(m_appsrc),
+            buffer);
     if(ret!=GST_FLOW_OK)
     {
         qDebug()<<"push buffer error"<<ret;
@@ -190,6 +239,7 @@ void VideoRecorder::grabFrame()
 
 void VideoRecorder::addFrame(const QImage &src)
 {
+    qDebug()<<"ADD FRAME"<<src.size();
     if(!m_running) return;
     QMutexLocker locker(&m_frameMutex);
     m_currentFrame=src.copy();
