@@ -33,6 +33,7 @@ public:
     bool show_aim =true;
     bool show_degree =true;
     bool show_text =true;
+    bool enable_click=true;
 
 signals:
     void update_list();
@@ -135,11 +136,20 @@ private:
         if(p.x() < -100 || p.x() > image_size.width()+100) return;
         if(p.y() < -100 || p.y() > image_size.height()+100) return;
         painter->save();
-        painter->setPen(QPen(col,2));
-        int r = 20;
-        painter->drawLine( p.x()-r, p.y(), p.x()+r, p.y());
-        painter->drawLine( p.x(), p.y()-r, p.x(),p.y()+r);
-        painter->drawEllipse(p,6,6);
+        painter->setPen(QPen(col,1));
+        int r = 25;
+        int r2 = 12;
+        int r3 = 5;
+        painter->drawLine( p.x()-r3, p.y(), p.x()+r3, p.y());
+        painter->drawLine( p.x(), p.y()-r3, p.x(),p.y()+r3);
+
+        painter->drawLine( p.x()-r, p.y(), p.x()-r2, p.y());
+        painter->drawLine( p.x()+r2, p.y(), p.x()+r, p.y());
+
+        painter->drawLine( p.x(), p.y()-r, p.x(),p.y()-r2);
+        painter->drawLine( p.x(), p.y()+r, p.x(),p.y()+r2);
+
+        // painter->drawEllipse(p,6,6);
         painter->drawText( p.x()+10, p.y()-10, QString("%1 %2") .arg(marker_angle.x(),0,'f',2).arg(marker_angle.y(),0,'f',2));
         painter->restore();
     }

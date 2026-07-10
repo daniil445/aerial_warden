@@ -20,6 +20,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->cb_show_aim, &QCheckBox::toggled,   [=](bool val) {ui->openGLWidget_RGB->show_aim=val;});
     connect(ui->cb_show_degree, &QCheckBox::toggled,[=](bool val) {ui->openGLWidget_RGB->show_degree=val;});
     connect(ui->cb_show_text, &QCheckBox::toggled,  [=](bool val) {ui->openGLWidget_RGB->show_text=val;});
+    connect(ui->controls, &motion_controller::update_screen_click,  [=](bool val) {ui->openGLWidget_RGB->enable_click=val;});
+
 
     dialog_sett= new conn_settings;
     connect(dialog_sett, &conn_settings::connect_to, this, &MainWindow::try_to_connect);

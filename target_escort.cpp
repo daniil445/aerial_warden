@@ -57,6 +57,7 @@ void target_escort::update_speed_x_y(double x_s, double y_s)
 {
     x_speed=x_s;
     y_speed=y_s;
+    qDebug()<<"move_to object"<<x_speed<<y_speed;
 }
 
 void target_escort::update_storage()
@@ -96,7 +97,7 @@ void target_escort::run()
         }else if(scenario==""){
             //            m_sender->sendTarget(objct.get_name(), QString("%1 %2").arg(0).arg(-1), QPointF(0,0));
         }
-        QThread::msleep(1000);
+        QThread::msleep(100);
     }
 }
 
@@ -132,7 +133,7 @@ void target_escort::play_test()
             //if(zoom_state==1)emit zoom_to_object(0);
         }
     }
-    msleep(1000);
+    msleep(100);
 }
 
 double target_escort::get_speed(double percent)
@@ -167,7 +168,7 @@ void target_escort::follow()
     QVector2D error(temp.angle_center - global_ang);
     double dist = error.length();
     double gain = 0.15;
-    double maxSpeed = 6.0;
+    double maxSpeed = x_speed;
     double speed = maxSpeed * (1.0 - exp(-gain * dist));
     qDebug()<<"move_to object"<<objct.get_name()<<temp.angle_center;
     emit move_to_object(temp.angle_center.x(),temp.angle_center.y(),speed,speed);

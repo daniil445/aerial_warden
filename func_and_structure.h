@@ -4,55 +4,35 @@
 #include <QVector2D>
 // -------------------------------------------------------------------------------- Lists
 
-//inline QVector<double> zoomT  ={0.0,0.22,0.335,0.41,0.47,
-//                                0.52,0.56,0.6,0.635,0.665,
-//                                0.695,0.722,0.747,0.768,0.788,
-//                                0.805,0.818,0.831,0.842,0.852,
-//                                0.862,0.8715,0.881,0.890,0.8983,
-//                                0.907,0.915,0.9235,0.931,0.938,
-//                                0.944,0.95,0.9550,0.9603,0.9643,
-//                                0.968,0.9717,0.975,0.9778,0.9805,
-//                                0.983,0.9853,0.988,0.990,0.992,
-//                                0.9937,0.9952,0.997,0.999,1.0};
+inline const QVector<double> zoomT  ={0.0,0.22,0.335,0.41,0.47,
+                               0.52,0.56,0.6,0.635,0.665,
+                               0.695,0.722,0.747,0.768,0.788,
+                               0.805,0.818,0.831,0.842,0.852,
+                               0.862,0.8715,0.881,0.890,0.8983,
+                               0.907,0.915,0.9235,0.931,0.938,
+                               0.944,0.95,0.9550,0.9603,0.9643,
+                               0.968,0.9717,0.975,0.9778,0.9805,
+                               0.983,0.9853,0.988,0.990,0.992,
+                               0.9937,0.9952,0.997,0.999,1.0};
 
 // -------------------------------------------------------------------------------- convertors
 
 inline QStringList obj_name= {"Plane","Bird","Drone","Human","Car"};
 inline QVariantList obj_perfect_size= {78,114,26,36,56};
 
-inline double getHFOV(double zoom)
-{
-    const double hfovWide = 66.0;
-    const double hfovTele = 1.49;
-    double fw = 1.0 /tan(qDegreesToRadians(hfovWide/2.0));
-    double ft = 1.0 /tan(qDegreesToRadians(hfovTele/2.0));
-    double f =fw + zoom*(ft-fw);
-    return qRadiansToDegrees(2.0*atan(1.0/f));
-}
-
 inline double getHFOV(int zoom)
 {
     const double hfovWide = 66.0;
     const double hfovTele = 1.49;
 
-    double fw = 1.0 / tan(qDegreesToRadians(hfovWide / 2.0));
-    double ft = 1.0 / tan(qDegreesToRadians(hfovTele / 2.0));
+    zoom = qBound(1, zoom, 50);
 
-    double t = (zoom - 1) / 49.0; // нормализация 1..50 → 0..1
+    double fw = 1.0 / tan(qDegreesToRadians(hfovWide * 0.5));
+    double ft = 1.0 / tan(qDegreesToRadians(hfovTele * 0.5));
 
-    double f = fw + t * (ft - fw);
+    double f = fw + zoomT[zoom - 1] * (ft - fw);
 
     return qRadiansToDegrees(2.0 * atan(1.0 / f));
-}
-
-inline double getVFOV(double zoom)
-{
-    const double vfovWide = 40.3;
-    const double vfovTele = 0.84;
-    double fw =1.0/tan(qDegreesToRadians(vfovWide/2.0));
-    double ft =1.0/tan(qDegreesToRadians(vfovTele/2.0));
-    double f =fw + zoom*(ft-fw);
-    return qRadiansToDegrees(2.0*atan(1.0/f));
 }
 
 inline double getVFOV(int zoom)
@@ -60,23 +40,21 @@ inline double getVFOV(int zoom)
     const double vfovWide = 40.3;
     const double vfovTele = 0.84;
 
-    double fw = 1.0 / tan(qDegreesToRadians(vfovWide / 2.0));
-    double ft = 1.0 / tan(qDegreesToRadians(vfovTele / 2.0));
+    zoom = qBound(1, zoom, 50);
 
-    double t = (zoom - 1) / 49.0;
+    double fw = 1.0 / tan(qDegreesToRadians(vfovWide * 0.5));
+    double ft = 1.0 / tan(qDegreesToRadians(vfovTele * 0.5));
 
-    double f = fw + t * (ft - fw);
+    double f = fw + zoomT[zoom - 1] * (ft - fw);
 
     return qRadiansToDegrees(2.0 * atan(1.0 / f));
 }
-inline QPointF getFOV(double zoom)
-{
-    return QPointF(getHFOV(zoom),getVFOV(zoom));
-}
+
 inline QPointF getFOV(int zoom)
 {
     return QPointF(getHFOV(zoom),getVFOV(zoom));
 }
+
 inline QPoint globalToLocal( const QVector2D& camera_angle, const QPointF& target_angle, const QPointF& fov, const QSize& size)
 {
     double dAz = target_angle.x() - camera_angle.x();

@@ -26,7 +26,7 @@ void VideoWidget::mousePressEvent(QMouseEvent *event)
 {
     setFocus();
     if (event->button() == Qt::LeftButton)
-        emit imageClicked(event->pos());
+        if(enable_click) emit imageClicked(event->pos());
 
     QOpenGLWidget::mousePressEvent(event);
 }
@@ -247,10 +247,19 @@ void VideoWidget::draw_text(QPainter * painter)
 
 void VideoWidget::draw_aim(QPainter * painter,QPoint aim, QColor color)
 {
-    painter->setPen(QPen(color, 2));
-    double cross_size=50;
-    painter->drawLine(QPoint(aim.x()-cross_size,aim.y()),QPoint(aim.x()+cross_size,aim.y()));
-    painter->drawLine(QPoint(aim.x(),aim.y()-cross_size),QPoint(aim.x(),aim.y()+cross_size));
+    painter->setPen(QPen(color, 1));
+    int cross_size=30;
+    int r2 = 15;
+    int r3 = 5;
+
+    painter->drawLine( aim.x()-cross_size, aim.y(),  aim.x()-r2, aim.y());
+    painter->drawLine( aim.x()+r2, aim.y(), aim.x()+cross_size, aim.y());
+
+    painter->drawLine( aim.x(), aim.y()-cross_size, aim.x(),aim.y()-r2);
+    painter->drawLine( aim.x(), aim.y()+cross_size, aim.x(),aim.y()+r2);
+
+    painter->drawLine(QPoint(aim.x()-r3,aim.y()),QPoint(aim.x()+r3,aim.y()));
+    painter->drawLine(QPoint(aim.x(),aim.y()-r3),QPoint(aim.x(),aim.y()+r3));
 }
 
 void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)

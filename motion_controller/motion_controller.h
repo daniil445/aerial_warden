@@ -30,6 +30,7 @@ signals:
     void update_speed_x_y(double,double);
     void send_zoom(int);
     void change_cam(int);
+    void update_screen_click(int);
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
