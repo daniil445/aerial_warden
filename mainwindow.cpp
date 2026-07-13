@@ -50,6 +50,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&recordTimer,&QTimer::timeout,this,&MainWindow::recordTick);
     m_recordFrame=QImage(size(),QImage::Format_RGB888);
 
+    recorder = new VideoRecorder(this);
+    stream_recorder= new StreamRecorder(this);
+
     follower= new target_escort(this);
     //// linkers
     follower->link_storages(&storage_move,&storage,sender);
@@ -119,13 +122,15 @@ void MainWindow::try_to_connect(QStringList url_main)
     main_ip=url_main[0];
     main_port=url_main[1].toInt();
     meta_port=url_main[2].toInt();
-    rtcp_receiver_RGB->setUrl("rtsp://"+main_ip+":"+url_main[3]+"/rgb");
+    rgb_port=url_main[3].toInt();
+    ir_port=url_main[4].toInt();
+    rtcp_receiver_RGB->setUrl("rtsp://"+main_ip+":"+QString::number(rgb_port)+"/rgb");
     rtcp_receiver_RGB->start();
-//    rtcp_receiver_IR ->setUrl("rtsp://"+main_ip+":"+url_main[4]+"/ir");
+//    rtcp_receiver_IR ->setUrl("rtsp://"+main_ip+":"+QString::number(ir_port)+"/ir");
 //    rtcp_receiver_IR->start();
 
-    qDebug()<<"update stream"<<"rtsp://"<<main_ip+":"+url_main[3];
-    qDebug()<<"update stream"<<"rtsp://"<<main_ip+":"+url_main[4];
+    qDebug()<<"update stream"<<"rtsp://"<<main_ip+":"+QString::number(rgb_port);
+    qDebug()<<"update stream"<<"rtsp://"<<main_ip+":"+QString::number(ir_port);
     qDebug()<<"update meta"<<"UDP"<<main_ip<<url_main[1]<<url_main[2];
 
     UDP_receiver->bind(main_ip,meta_port);
@@ -324,5 +329,25 @@ void MainWindow::on_self_record_clicked(bool checked)
         recorder->stop();
     }
 
+}
+
+
+void MainWindow::on_stream_record_clicked(bool checked)
+{
+
+    if(checked){
+        ui->stream_record->setText("stop stream record");
+        stream_recorder->start("rtsp://"+main_ip+":"+QString::number(rgb_port)+"/rgb");
+        // m_recordSize=this->grab().size();
+        // m_recordSize.setWidth(m_recordSize.width() & ~1);
+        // m_recordSize.setHeight(m_recordSize.height() & ~1);
+        // recorder->start(m_recordSize,30);
+        // recordTimer.start(33);
+    }else{
+        ui->stream_record->setText("start stream record");
+        stream_recorder->stop();
+        // recordTimer.stop();
+        // recorder->stop();
+    }
 }
 

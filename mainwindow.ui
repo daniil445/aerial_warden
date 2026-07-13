@@ -303,6 +303,45 @@
         </spacer>
        </item>
        <item>
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="title">
+          <string>Records</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_6">
+          <item>
+           <widget class="QPushButton" name="self_record">
+            <property name="text">
+             <string>start window record</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="stream_record">
+            <property name="text">
+             <string>start stream record</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="debug_record">
+            <property name="text">
+             <string>start orin record</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
           <number>0</number>
@@ -363,7 +402,7 @@
              <string>show_moves</string>
             </property>
             <property name="checked">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -491,26 +530,6 @@
            <widget class="QPushButton" name="btn_dist">
             <property name="text">
              <string>calculate distance</string>
-            </property>
-            <property name="checkable">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="debug_record">
-            <property name="text">
-             <string>start debug record</string>
-            </property>
-            <property name="checkable">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="self_record">
-            <property name="text">
-             <string>start self record</string>
             </property>
             <property name="checkable">
              <bool>true</bool>
@@ -664,7 +683,7 @@
      <x>0</x>
      <y>0</y>
      <width>1784</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuMenu">

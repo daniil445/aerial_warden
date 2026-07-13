@@ -12,6 +12,7 @@
 #include <conn_settings.h>
 #include <VideoRecorder.h>
 #include <QTimer>
+#include <StreamRecorder.h>
 
 
 QT_BEGIN_NAMESPACE
@@ -60,6 +61,8 @@ private slots:
 
     void on_self_record_clicked(bool checked);
 
+    void on_stream_record_clicked(bool checked);
+
 private:
     Ui::MainWindow *ui;
 
@@ -70,6 +73,7 @@ private:
     CommandSender* sender;
     target_escort* follower;
     VideoRecorder* recorder;
+    StreamRecorder* stream_recorder;
 
     QMap <QString,Detection> storage;
     QMap <QString,Detection> storage_move;
@@ -86,6 +90,8 @@ private:
     QString focus_name;
     int main_port;
     int meta_port;
+    int rgb_port;
+    int ir_port;
 
 
 };

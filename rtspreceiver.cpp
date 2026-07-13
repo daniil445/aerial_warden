@@ -133,6 +133,7 @@ void RtspReceiver::run()
     m_sink = nullptr;
 }
 
+
 GstFlowReturn RtspReceiver::on_new_sample(GstAppSink *sink, gpointer user_data)
 {
     RtspReceiver *self = static_cast<RtspReceiver*>(user_data);

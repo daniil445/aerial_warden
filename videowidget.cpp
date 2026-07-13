@@ -247,7 +247,7 @@ void VideoWidget::draw_text(QPainter * painter)
 
 void VideoWidget::draw_aim(QPainter * painter,QPoint aim, QColor color)
 {
-    painter->setPen(QPen(color, 1));
+    painter->setPen(QPen(color, 2));
     int cross_size=30;
     int r2 = 15;
     int r3 = 5;

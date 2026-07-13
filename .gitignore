@@ -41,6 +41,7 @@ build/*
 .qtc_clangd/*
 model/*
 client/*
+videos/*
 *.bat
 # qtcreator generated files
 *.pro.user*

@@ -24,7 +24,7 @@ public:
     explicit VideoWidget(QWidget* parent = nullptr);
     QImage temp_image;
 
-    bool motion_visible =false;
+    bool motion_visible =true;
     bool motion_planes =true;
     bool motion_drones =true;
     bool motion_birds =true;
@@ -136,7 +136,7 @@ private:
         if(p.x() < -100 || p.x() > image_size.width()+100) return;
         if(p.y() < -100 || p.y() > image_size.height()+100) return;
         painter->save();
-        painter->setPen(QPen(col,1));
+        painter->setPen(QPen(col,2));
         int r = 25;
         int r2 = 12;
         int r3 = 5;
