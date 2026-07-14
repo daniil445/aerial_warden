@@ -25,6 +25,7 @@ private:
     static void onPadAdded(GstElement *src,GstPad *pad,gpointer data);
 
 private:
+    QString tag;
     bool m_running=false;
 
     GstElement *m_pipeline=nullptr;

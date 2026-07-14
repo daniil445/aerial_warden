@@ -32,7 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(rtcp_receiver_RGB, &RtspReceiver::frameReady, ui->openGLWidget_RGB, &VideoWidget::setFrame,Qt::QueuedConnection);
 
     rtcp_receiver_IR = new RtspReceiver(this);
-    connect(rtcp_receiver_IR, &RtspReceiver::frameReady, ui->openGLWidget_IR, &VideoWidget::setFrame);
+    connect(rtcp_receiver_IR, &RtspReceiver::frameReady, ui->openGLWidget_IR, &VideoWidget::setFrame,Qt::QueuedConnection);
 
 
     sender = new CommandSender(this);
@@ -51,38 +51,42 @@ MainWindow::MainWindow(QWidget *parent)
     m_recordFrame=QImage(size(),QImage::Format_RGB888);
 
     recorder = new VideoRecorder(this);
-    stream_recorder= new StreamRecorder(this);
-
-    follower= new target_escort(this);
+    stream_rgb_recorder= new StreamRecorder(this);
+    stream_ir_recorder= new StreamRecorder(this);
+    // follower= new target_escort(this);
     //// linkers
-    follower->link_storages(&storage_move,&storage,sender);
+    // follower->link_storages(&storage_move,&storage,sender);
     ui->openGLWidget_RGB->link_storages(&storage_move,&storage);
-    follower->start();
+    ui->openGLWidget_IR->link_storages(&storage_move,&storage);
+    // follower->start();
 
-    connect(ui->alg_zoom, &QCheckBox::toggled, [=](bool var) {follower->follow_zoom=var;});
-    connect(ui->openGLWidget_RGB, &VideoWidget::update_size,follower, &target_escort::update_size);
-    connect(follower, &target_escort::move_by_object, sender, &CommandSender::sendMove);
-    connect(follower,&target_escort::move_to_object,this,&MainWindow::sendMoveToCommand);
-    connect(this, &MainWindow::update_focus,follower, &target_escort::update_focus);
+    // connect(ui->alg_zoom, &QCheckBox::toggled, [=](bool var) {follower->follow_zoom=var;});
+    // connect(ui->openGLWidget_RGB, &VideoWidget::update_size,follower, &target_escort::update_size);
+    // connect(ui->openGLWidget_IR, &VideoWidget::update_size,follower, &target_escort::update_size);
+    // connect(follower, &target_escort::move_by_object, sender, &CommandSender::sendMove);
+    // connect(follower,&target_escort::move_to_object,this,&MainWindow::sendMoveToCommand);
+    // connect(this, &MainWindow::update_focus,follower, &target_escort::update_focus);
     connect(this, &MainWindow::update_focus,ui->openGLWidget_RGB, &VideoWidget::update_focus);
+    connect(this, &MainWindow::update_focus,ui->openGLWidget_IR, &VideoWidget::update_focus);
     connect(ui->openGLWidget_RGB,&VideoWidget::update_list,this, &MainWindow::update_list);
-    connect(follower, &target_escort::zoom_to_object, [=](double val) {sender->sendZoom(main_stream,val);});
+    connect(ui->openGLWidget_IR,&VideoWidget::update_list,this, &MainWindow::update_list);
+    // connect(follower, &target_escort::zoom_to_object, [=](double val) {sender->sendZoom(main_stream,val);});
 
 
     connect(ui->controls, &motion_controller::moveCommand,this,&MainWindow::sendMoveCommand);
     connect(ui->controls, &motion_controller::moveToCommand,this,&MainWindow::sendMoveToCommand);
 
-    connect(ui->controls, &motion_controller::update_speed_x_y,follower,&target_escort::update_speed_x_y);
+    // connect(ui->controls, &motion_controller::update_speed_x_y,follower,&target_escort::update_speed_x_y);
     connect(ui->controls, &motion_controller::change_cam,ui->widget_cam,&QTabWidget::setCurrentIndex);
             // [=](int val) { qDebug()<<"val"<<val;ui->widget_cam->setCurrentIndex(val);});
 
     UDP_receiver = new CommandReceiver(this);
     connect(UDP_receiver, &CommandReceiver::metaObjectsReceived,ui->openGLWidget_RGB, &VideoWidget::setMeta);
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_f_z,this,&MainWindow::update_meta);
-    connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_f_z,follower,&target_escort::update_meta);
+    // connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_f_z,follower,&target_escort::update_meta);
     connect(this, &MainWindow::update_zoom,ui->controls, &motion_controller::update_zoom);
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,this,&MainWindow::update_meta_pos);
-    connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,follower,&target_escort::update_meta_pos);
+    // connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,follower,&target_escort::update_meta_pos);
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,ui->controls, &motion_controller::update_aim);
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_d,this,&MainWindow::update_distance);
     connect(ui->openGLWidget_RGB, &VideoWidget::moveToCommand,this,&MainWindow::sendMoveToCommandPos);
@@ -112,8 +116,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    follower->stop();
-    follower->wait();
+    // follower->stop();
+    // follower->wait();
     delete ui;
 }
 
@@ -126,8 +130,8 @@ void MainWindow::try_to_connect(QStringList url_main)
     ir_port=url_main[4].toInt();
     rtcp_receiver_RGB->setUrl("rtsp://"+main_ip+":"+QString::number(rgb_port)+"/rgb");
     rtcp_receiver_RGB->start();
-//    rtcp_receiver_IR ->setUrl("rtsp://"+main_ip+":"+QString::number(ir_port)+"/ir");
-//    rtcp_receiver_IR->start();
+    rtcp_receiver_IR ->setUrl("rtsp://"+main_ip+":"+QString::number(ir_port)+"/ir");
+    rtcp_receiver_IR->start();
 
     qDebug()<<"update stream"<<"rtsp://"<<main_ip+":"+QString::number(rgb_port);
     qDebug()<<"update stream"<<"rtsp://"<<main_ip+":"+QString::number(ir_port);
@@ -248,6 +252,7 @@ void MainWindow::on_obj_list_itemClicked(QListWidgetItem *item)
 {
     focus_name=item->text();
     ui->btn_follow->setEnabled(true);
+    sender->sendTarget(focus_name,focus_name.split(' ').last().toInt());
     if(storage.contains(focus_name))emit update_focus(storage.value(focus_name));
 }
 
@@ -267,11 +272,11 @@ void MainWindow::on_btn_follow_clicked(bool checked)
     }
     if(checked){
         ui->btn_follow->setText("unfollow object");
-        follower->scenario="follow";
+        // follower->scenario="follow";
     }else{
         ui->btn_follow->setText("follow object");
 //        sender->sendCmd("stop");
-        follower->scenario="";
+        // follower->scenario="";
     }
 }
 
@@ -279,12 +284,12 @@ void MainWindow::on_btn_search_clicked(bool checked)
 {
     if(checked){
         ui->btn_search->setText("stop search object");
-        follower->scenario="search";
+        // follower->scenario="search";
     }else{
         ui->btn_search->setText("search objects");
 //        sender->sendCmd("stop");
-        follower->scenario="";
-        follower->pause();
+        // follower->scenario="";
+        // follower->pause();
     }
 }
 
@@ -300,8 +305,6 @@ void MainWindow::on_btn_dist_clicked(bool checked)
     }
 }
 
-
-
 void MainWindow::on_debug_record_clicked(bool checked)
 {
     if(checked){
@@ -312,7 +315,6 @@ void MainWindow::on_debug_record_clicked(bool checked)
         sender->sendCmd("record","0");
     }
 }
-
 
 void MainWindow::on_self_record_clicked(bool checked)
 {
@@ -328,26 +330,19 @@ void MainWindow::on_self_record_clicked(bool checked)
         recordTimer.stop();
         recorder->stop();
     }
-
 }
 
 
 void MainWindow::on_stream_record_clicked(bool checked)
 {
-
     if(checked){
         ui->stream_record->setText("stop stream record");
-        stream_recorder->start("rtsp://"+main_ip+":"+QString::number(rgb_port)+"/rgb");
-        // m_recordSize=this->grab().size();
-        // m_recordSize.setWidth(m_recordSize.width() & ~1);
-        // m_recordSize.setHeight(m_recordSize.height() & ~1);
-        // recorder->start(m_recordSize,30);
-        // recordTimer.start(33);
+        stream_rgb_recorder->start("rtsp://"+main_ip+":"+QString::number(rgb_port)+"/rgb");
+        stream_ir_recorder->start("rtsp://"+main_ip+":"+QString::number(ir_port)+"/ir");
     }else{
         ui->stream_record->setText("start stream record");
-        stream_recorder->stop();
-        // recordTimer.stop();
-        // recorder->stop();
+        stream_rgb_recorder->stop();
+        stream_ir_recorder->stop();
     }
 }
 

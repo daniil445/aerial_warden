@@ -41,9 +41,7 @@ void target_escort::update_focus(Detection focus)
         objct.prec=focus.prec;
         objct.box=focus.box;
     }else{
-        m_sender->sendTarget(objct.get_name(),
-                             -1,
-                             QPointF(0,0));
+        m_sender->sendTarget(objct.get_name(), -1);
     }
 
 }
@@ -158,11 +156,11 @@ void target_escort::follow()
     Detection& temp = (*m_storage)[objct.get_name()];
     QPointF future = kalman_predict( temp, 0.2);     // прогноз на 200 мс вперед
     if(temp.id==-1){
-        m_sender->sendTarget(objct.get_name(), -1, QPointF(0,0));
+        m_sender->sendTarget(objct.get_name(), -1);
         return;
     }
 
-    m_sender->sendTarget(objct.get_name(), objct.id, temp.angle_center);
+    m_sender->sendTarget(objct.get_name(), objct.id);
     //    qDebug()<<"sendTarget"<<objct.get_name()<<"="<<temp.get_name()<<temp.angle_center<<future;
 
     QVector2D error(temp.angle_center - global_ang);

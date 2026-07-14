@@ -19,7 +19,7 @@ bool StreamRecorder::start(const QString &url)
 
     if(!buildPipeline(url))
         return false;
-
+    tag=url.split("/").last();
     gst_element_set_state(
         m_pipeline,
         GST_STATE_PLAYING);
@@ -66,7 +66,7 @@ bool StreamRecorder::buildPipeline(const QString &url)
     }
 
     QString filename = QCoreApplication::applicationDirPath() + "/camera_"
-       + QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss") + ".mp4";
+       + QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss") +"_"+tag+".mp4";
     qDebug()<<"Recording:"<<filename;
     g_object_set( m_source, "location", url.toUtf8().constData(), "protocols", 4, "latency", 0, nullptr);
     g_object_set( m_sink, "location", filename.toUtf8().constData(), nullptr);

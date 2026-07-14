@@ -61,15 +61,10 @@ public:
         QByteArray data = doc.toJson(QJsonDocument::Compact);
         socket->writeDatagram(data, QHostAddress(main_ip), main_port);
     }
-    void sendTarget(QString name,int dig_name, QPointF pos){
-        QJsonArray posArray;
-        posArray.append(pos.x());
-        posArray.append(pos.y());
-
+    void sendTarget(QString name,int dig_name){
         QJsonObject target;
         target["name"] = name;
         target["ids"] = dig_name;
-        target["pos"] = posArray;
 
         QJsonObject obj;
         obj["source"] = "user";

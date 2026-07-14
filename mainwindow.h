@@ -71,9 +71,10 @@ private:
     RtspReceiver* rtcp_receiver_IR;
     CommandReceiver* UDP_receiver;
     CommandSender* sender;
-    target_escort* follower;
+    // target_escort* follower;
     VideoRecorder* recorder;
-    StreamRecorder* stream_recorder;
+    StreamRecorder* stream_rgb_recorder;
+    StreamRecorder* stream_ir_recorder;
 
     QMap <QString,Detection> storage;
     QMap <QString,Detection> storage_move;
