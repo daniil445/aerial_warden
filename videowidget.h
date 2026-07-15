@@ -106,7 +106,7 @@ private:
 
     QVector<Detection> last_detection;
     Detection main_obj;
-
+    Detection target_obj;
     QColor green_overlay=QColor(0, 0xdd, 0, 0xaa);
     QColor red_overlay=QColor(0xdd, 0, 0, 0xaa);
     QColor gray_overlay=QColor(0xdd, 0xdd, 0xdd, 0xff);

@@ -33,7 +33,6 @@ void target_escort::update_focus(Detection focus)
 {
     qDebug()<<"update_focus"<< objct.classname<< objct.id<<objct.angle_center;
     if(focus.id!=-1){//pause();
-        objct.kalman_init = true;
         objct.box=focus.box;
         objct.classname=focus.classname;
         objct.id=focus.id;
@@ -154,7 +153,7 @@ void target_escort::follow()
 {
     //    update_storage();
     Detection& temp = (*m_storage)[objct.get_name()];
-    QPointF future = kalman_predict( temp, 0.2);     // прогноз на 200 мс вперед
+    // QPointF future = kalman_predict( temp, 0.2);     // прогноз на 200 мс вперед
     if(temp.id==-1){
         m_sender->sendTarget(objct.get_name(), -1);
         return;
@@ -163,13 +162,13 @@ void target_escort::follow()
     m_sender->sendTarget(objct.get_name(), objct.id);
     //    qDebug()<<"sendTarget"<<objct.get_name()<<"="<<temp.get_name()<<temp.angle_center<<future;
 
-    QVector2D error(temp.angle_center - global_ang);
-    double dist = error.length();
+    // QVector2D error(temp.angle_center - global_ang);
+    // double dist = error.length();
     double gain = 0.15;
     double maxSpeed = x_speed;
-    double speed = maxSpeed * (1.0 - exp(-gain * dist));
-    qDebug()<<"move_to object"<<objct.get_name()<<temp.angle_center;
-    emit move_to_object(temp.angle_center.x(),temp.angle_center.y(),speed,speed);
+    // double speed = maxSpeed * (1.0 - exp(-gain * dist));
+    // qDebug()<<"move_to object"<<objct.get_name()<<temp.angle_center;
+    // emit move_to_object(temp.angle_center.x(),temp.angle_center.y(),speed,speed);
 
     //    if(!moving){
     //        emit move_to_object(temp.angle_center_projective.x(),temp.angle_center_projective.y(),5,5);

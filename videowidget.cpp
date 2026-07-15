@@ -135,6 +135,12 @@ void VideoWidget::setMeta(const QJsonObject &obj)
     QJsonObject dist = obj["laser"].toObject();
     st_dist =dist["distance"].toDouble();
 
+    QJsonObject target = obj["target"].toObject();
+    QJsonArray pix_coor=target["pos"].toArray();
+    if(pix_coor.count()>1) target_obj.pixel_center = QPoint(dist["pos"][0].toDouble(),dist["pos"][1].toDouble());
+    target_obj.classname=target["name"].toInt();
+    target_obj.id=target["id"].toInt();
+
     QMutexLocker locker(&m_queueMutex);
     QJsonArray ai =obj["ai"].toArray();
     work_with_storage(ai);
@@ -286,15 +292,9 @@ void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)
         else if(det.classname==-1)color=Qt::yellow;
         else color=Qt::gray;
         double pen_size=1;
-        if(det.classname==main_obj.classname && det.id==main_obj.id){
+        if(target_obj.id!=-1 && det.id==target_obj.id){
             pen_size=4;
-            Detection& temp = (*m_storage)[main_obj.get_name()];
-            draw_aim(painter,temp.get_local_center());
-            if(temp.kalman_init)kalman_init(temp);
-            QPointF filtered = kalman_update(temp,  temp.angle_center, 1.0/30.0);
-
-            draw_aim(painter,main_obj.angle_center.toPoint(),red_overlay);
-//            qDebug()<<temp.get_name()<<"filtered"<<filtered<<temp.angle_center;
+            draw_aim(painter,target_obj.pixel_center.toPoint(),red_overlay);
         }
         painter->setPen(QPen(color,pen_size));
 
