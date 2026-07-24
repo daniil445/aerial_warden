@@ -21,6 +21,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->cb_show_degree, &QCheckBox::toggled,[=](bool val) {ui->openGLWidget_RGB->show_degree=val;});
     connect(ui->cb_show_text, &QCheckBox::toggled,  [=](bool val) {ui->openGLWidget_RGB->show_text=val;});
     connect(ui->controls, &motion_controller::update_screen_click,  [=](bool val) {ui->openGLWidget_RGB->enable_click=val;});
+    connect(ui->controls, &motion_controller::update_stabilization_click, [=](bool val) {sender->sendCmd("move_stab",val);});
+
 
 
     dialog_sett= new conn_settings;
@@ -161,7 +163,7 @@ QImage MainWindow::composeRecorderFrame()
 
 void MainWindow::update_meta(quint64 frame, int zoom)
 {
-    ui->l_fps->setText(QString::number(frame/1000000000.0,'d',3));
+    ui->l_fps->setText(QString::number(frame/100000.0,'d',3));
 //    qDebug()<<"ui zoom"<<zoom<<ui->zoom_slider->value()<<abs(zoom -ui->zoom_slider->value());
     if(!ui->zoom_slider->isEnabled()){
         ui->zoom_slider->setEnabled(true);
@@ -206,7 +208,7 @@ void MainWindow::sendMoveCommand(const QString& cmd, double speed, bool pressed)
 }
 void MainWindow::sendMoveToCommandPos(QPointF pos)
 {
-    sendMoveToCommand(pos.x(),pos.y(),5,5);
+    sendMoveToCommand(pos.x(),pos.y(),ui->controls->x_speed,ui->controls->y_speed);
 }
 
 void MainWindow::sendMoveToCommand(double pos_x, double pos_y, double speed_x, double speed_y)
@@ -252,8 +254,8 @@ void MainWindow::on_obj_list_itemClicked(QListWidgetItem *item)
 {
     focus_name=item->text();
     ui->btn_follow->setEnabled(true);
-    sender->sendTarget(focus_name,focus_name.split(' ').last().toInt());
-    if(storage.contains(focus_name))emit update_focus(storage.value(focus_name));
+//    sender->sendTarget(focus_name,focus_name.split(' ').last().toInt(),ui->f_count->value());
+//    if(storage.contains(focus_name))emit update_focus(storage.value(focus_name));
 }
 
 
@@ -272,10 +274,11 @@ void MainWindow::on_btn_follow_clicked(bool checked)
     }
     if(checked){
         ui->btn_follow->setText("unfollow object");
+        // sender->sendTarget(focus_name,focus_name.split(' ').last().toInt(),ui->f_count->value());
         // follower->scenario="follow";
     }else{
         ui->btn_follow->setText("follow object");
-//        sender->sendCmd("stop");
+        sender->sendCmd("stop");
         // follower->scenario="";
     }
 }
@@ -298,21 +301,21 @@ void MainWindow::on_btn_dist_clicked(bool checked)
 {
     if(checked){
         ui->btn_dist->setText("stop calculate distance");
-        sender->sendCmd("start_distance");
+        sender->sendCmd("range_find");
     }else{
         ui->btn_dist->setText("calculate distance");
-        sender->sendCmd("stop_distance");
+        sender->sendCmd("range_stop");
     }
 }
 
 void MainWindow::on_debug_record_clicked(bool checked)
 {
     if(checked){
-        ui->debug_record->setText("stop debug record");
-        sender->sendCmd("record","1");
+        ui->debug_record->setText("stop orin record");
+        sender->sendCmd("record",300);
     }else{
-        ui->debug_record->setText("start debug record");
-        sender->sendCmd("record","0");
+        ui->debug_record->setText("start orin record");
+        sender->sendCmd("record",0);
     }
 }
 

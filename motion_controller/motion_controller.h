@@ -19,6 +19,8 @@ class motion_controller : public QWidget
 public:
     explicit motion_controller(QWidget *parent = nullptr);
     ~motion_controller();
+    double x_speed;
+    double y_speed;
 
 signals:
     void sig_homing_xy();
@@ -31,6 +33,7 @@ signals:
     void send_zoom(int);
     void change_cam(int);
     void update_screen_click(int);
+    void update_stabilization_click(int);
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
@@ -51,8 +54,7 @@ private slots:
 private:
     Ui::motion_controller *ui;
     QTimer *upd_tmr;
-    double x_speed;
-    double y_speed;
+
     double cam_zoom=1;
 
     double aim_x=0;

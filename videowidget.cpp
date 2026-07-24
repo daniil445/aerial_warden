@@ -33,6 +33,9 @@ void VideoWidget::mousePressEvent(QMouseEvent *event)
 
 void VideoWidget::onImageClicked(QPoint p)
 {
+    QPointF coef = QPointF(width()  / double(curr_size.width()), height() / double(curr_size.height()));
+    qDebug()<<"coef"<<coef;
+//    p = QPointF(p.x()*coef.x(),p.y()*coef.y()).toPoint();
     click_pos = localToGlobal(ptz_angle,p,getFOV(zoom),size());
     emit moveToCommand(click_pos);
 }
@@ -55,7 +58,7 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
     qf.frameId = time;
     qf.image = img.copy();
     curr_size=img.size();
-//    qDebug()<<"setFrame "<<time;
+    qDebug()<<"setFrame "<<QString::number(time/100000.0,'d',3);
     QMutexLocker locker(&m_queueMutex);
     m_frameQueue.enqueue(qf);
 
@@ -63,7 +66,6 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
         QMutexLocker locker(&m_mutex);
         m_frameQueue.dequeue();
     }
-//    qDebug()<<"setFrame "<<time<<img.size()<<m_frameQueue.size();
     update();
 
 }
@@ -72,36 +74,27 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
 QImage VideoWidget::findFrameById(qint64 frameId)
 {
     QMutexLocker locker(&m_queueMutex);
-    QImage lastFrame;
     while (!m_frameQueue.isEmpty())
     {
         const QueuedFrame &frame = m_frameQueue.head();
-        lastFrame = frame.image;
         if(frame.frameId < frameId){
             m_frameQueue.dequeue();
             continue;
         }
-
-        if(frame.frameId == frameId) {
-            m_lastImage = frame.image;
-            m_frameQueue.dequeue();
-            return m_lastImage;
-        }
-        break;
+        if(frame.frameId == frameId)return m_frameQueue.dequeue().image;
+        return m_frameQueue.dequeue().image;
     }
-
-    if(!lastFrame.isNull()){
-        m_lastImage = lastFrame;
-        return m_lastImage;
-    }
-    return m_lastImage;
+    return {};
 }
+
 
 
 void VideoWidget::setMeta(const QJsonObject &obj)
 {
+    QJsonArray ai =obj["ai"].toArray();
+    qDebug()<<"setMeta "<< ai.first()["id"]<<QString::number(m_frame_time/100000.0,'d',3);
     metaCounter++;
-    //qDebug()<<"meta"<<obj;
+//    qDebug()<<"meta"<<obj;
     QJsonObject camera =obj["rgb"].toObject();
     m_frame_time = camera["ts"].toInteger();
 //    qDebug()<<"setMeta  "<<debugFrameQueue().contains(QString::number(m_frame_time,'d',0))
@@ -137,18 +130,19 @@ void VideoWidget::setMeta(const QJsonObject &obj)
 
     QJsonObject target = obj["target"].toObject();
     QJsonArray pix_coor=target["pos"].toArray();
-    if(pix_coor.count()>1) target_obj.pixel_center = QPoint(dist["pos"][0].toDouble(),dist["pos"][1].toDouble());
+    if(pix_coor.count()>1) target_obj.pixel_center = QPoint(target["pos"][0].toDouble(),target["pos"][1].toDouble());
     target_obj.classname=target["name"].toInt();
     target_obj.id=target["id"].toInt();
+//    qDebug()<<"setMetaTarget  "<<target<<target_obj.classname<<target_obj.id<<target_obj.pixel_center;
+
 
     QMutexLocker locker(&m_queueMutex);
-    QJsonArray ai =obj["ai"].toArray();
     work_with_storage(ai);
     emit update_list();
 }
 
 void VideoWidget::work_with_storage(QJsonArray ai){
-    QPointF coef = QPointF(width()  / double(m_lastImage.width()), height() / double(m_lastImage.height()));
+    QPointF coef = QPointF(width()  / double(curr_size.width()), height() / double(curr_size.height()));
     for (const QJsonValue& var : ai){
         Detection ai_obj;
         ai_obj.classname=var["class"].toInt();
@@ -225,6 +219,18 @@ void VideoWidget::paint_overlay(QPainter* painter)
         draw_aim(painter,QPoint(rect().width() /2,rect().height()/2));
         draw_test_marker(painter, ptz_angle, QPoint(0,0), getFOV(zoom), size());
         draw_test_marker(painter, ptz_angle, click_pos, getFOV(zoom), size());
+
+//        draw_aim(painter,QPoint(rect().width()*10 /20.0,rect().height()/2));
+//        draw_aim(painter,QPoint(rect().width()*11 /20.0,rect().height()/2));
+//        draw_aim(painter,QPoint(rect().width()*12 /20.0,rect().height()/2));
+//        draw_aim(painter,QPoint(rect().width()*13 /20.0,rect().height()/2));
+//        draw_aim(painter,QPoint(rect().width()*14 /20.0,rect().height()/2));
+//        draw_aim(painter,QPoint(rect().width()*15 /20.0,rect().height()/2));
+//        draw_aim(painter,QPoint(rect().width()*16 /20.0,rect().height()/2));
+//        draw_aim(painter,QPoint(rect().width()*17 /20.0,rect().height()/2));
+//        draw_aim(painter,QPoint(rect().width()*18 /20.0,rect().height()/2));
+//        draw_aim(painter,QPoint(rect().width()*19 /20.0,rect().height()/2));
+
 //        draw_degree(painter, ptz_angle, QPoint(11,10), QPoint(10,11), getFOV(zoom), size());
         drawMotionVector(painter,ptz_speed);
     }
@@ -251,9 +257,10 @@ void VideoWidget::draw_text(QPainter * painter)
 
 }
 
-void VideoWidget::draw_aim(QPainter * painter,QPoint aim, QColor color)
+void VideoWidget::draw_aim(QPainter * painter,QPoint aim,QPointF coef, QColor color)
 {
     painter->setPen(QPen(color, 2));
+    aim= QPointF(aim.x()*coef.x(),aim.y()*coef.y()).toPoint();
     int cross_size=30;
     int r2 = 15;
     int r3 = 5;
@@ -294,7 +301,11 @@ void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)
         double pen_size=1;
         if(target_obj.id!=-1 && det.id==target_obj.id){
             pen_size=4;
-            draw_aim(painter,target_obj.pixel_center.toPoint(),red_overlay);
+//            draw_aim(painter,target_obj.pixel_center.toPoint(),det.display_coef,red_overlay);
+            drawVector(painter,det.get_center(),target_obj.pixel_center.toPoint(),det.display_coef);
+//            qDebug()<<"paint"<<det.get_center()<<target_obj.pixel_center.toPoint();
+//            drawVector(painter,det.get_center(),target_obj.pixel_center.toPoint());
+
         }
         painter->setPen(QPen(color,pen_size));
 

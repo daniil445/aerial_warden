@@ -80,8 +80,6 @@ private:
         }
         return ids.join(" ");
     }
-    QImage m_lastImage;
-
     quint64 d_frame_time=0;
     quint64 m_frame_time=-1;
     QSize curr_size;
@@ -112,7 +110,7 @@ private:
     QColor gray_overlay=QColor(0xdd, 0xdd, 0xdd, 0xff);
     void paint_overlay(QPainter *);
     void paint_ai_objs(QPainter *,QVector<Detection>);
-    void draw_aim(QPainter *painter,QPoint,QColor col=QColor(0, 0xdd, 0, 0xaa));
+    void draw_aim(QPainter *painter,QPoint,QPointF coef=QPointF(1,1),QColor col=QColor(0, 0xdd, 0, 0xaa));
     // void draw_azimuth_scale(QPainter*, double);
     // void drawPitchScale(QPainter*, double);
     void draw_text(QPainter *painter);
@@ -176,6 +174,22 @@ private:
         painter->drawLine(end, p1.toPoint());
         painter->drawLine(end, p2.toPoint());
         painter->drawText(end + QPoint(10, -10),QString("%1 %2").arg(speed.x(),0,'f',1).arg(speed.y(),0,'f',1));
+    }
+
+    void drawVector(QPainter* painter, QPoint start, QPoint stop, QPointF coef, QColor col=QColor(0x00, 0xdd, 0, 0xaa)){
+        qDebug()<<"len"<<abs((start-stop).manhattanLength());
+        if (abs((start-stop).manhattanLength())<3) return;
+        painter->setPen(QPen(col, 1));
+        start= QPointF(start.x()*coef.x(),start.y()*coef.y()).toPoint();
+        stop= QPointF(stop.x()*coef.x(),stop.y()*coef.y()).toPoint();
+        painter->drawLine(start, stop);
+        double angle = atan2(start.y() - stop.y(),stop.x() - start.x());
+        const double head = 12;
+        QPointF p1(stop.x() - head*cos(angle - M_PI/6),stop.y() + head*sin(angle - M_PI/6));
+        QPointF p2(stop.x() - head*cos(angle + M_PI/6),stop.y() + head*sin(angle + M_PI/6));
+        painter->drawLine(stop, p1.toPoint());
+        painter->drawLine(stop, p2.toPoint());
+//        painter->drawText(stop + QPoint(10, -10),QString("%1 %2").arg(stop.x()-start.x(),0,'f',1).arg(stop.y()-start.y(),0,'f',1));
     }
 
     void draw_azimuth_scale(QPainter* painter, double headingDeg, double cameraZoom){

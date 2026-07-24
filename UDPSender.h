@@ -33,7 +33,7 @@ public:
         QByteArray data = doc.toJson(QJsonDocument::Compact);
         socket->writeDatagram(data, QHostAddress(main_ip), main_port);
     }
-    void sendCmd(QString cmd,QString val=""){
+    void sendCmd(QString cmd,int val=0){
         QJsonObject obj;
         obj["source"] = "user";
         obj["cmd"] = cmd;
@@ -61,10 +61,11 @@ public:
         QByteArray data = doc.toJson(QJsonDocument::Compact);
         socket->writeDatagram(data, QHostAddress(main_ip), main_port);
     }
-    void sendTarget(QString name,int dig_name){
+    void sendTarget(QString name,int dig_name,int f_count){
         QJsonObject target;
         target["name"] = name;
-        target["ids"] = dig_name;
+        target["id"] = dig_name;
+        target["f_step"] = f_count;
 
         QJsonObject obj;
         obj["source"] = "user";

@@ -92,7 +92,7 @@ motion_controller::motion_controller(QWidget *parent) :
     connect(ui->sb_y_speed, &QDoubleSpinBox::valueChanged, [=](double val) {y_speed=(ui->zoom_ratio->isChecked())?val/cam_zoom:val;
                                                                             emit update_speed_x_y(x_speed,y_speed);});
     connect(ui->screen_click, &QCheckBox::stateChanged, this, &motion_controller::update_screen_click);
-
+    connect(ui->stabilization_click, &QCheckBox::stateChanged, this, &motion_controller::update_stabilization_click);
 
     QTimer::singleShot(200, this, [=]()
     {

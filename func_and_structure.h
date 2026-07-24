@@ -95,7 +95,7 @@ struct Detection
         if(classname!=-1) name=temp[classname]+" "+QString::number(id);
         return name;
     }
-    QPoint get_center(){
+    QPoint get_center()const {
         return box.center();
     }
     QPointF display_coef;
