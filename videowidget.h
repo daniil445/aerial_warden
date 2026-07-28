@@ -81,7 +81,7 @@ private:
         return ids.join(" ");
     }
     quint64 d_frame_time=0;
-    quint64 m_frame_time=-1;
+    quint64 m_frame_time=0;
     QSize curr_size;
     int save_frame_count=30;
     int zoom=-1;
@@ -128,7 +128,6 @@ private:
         painter->drawLine(p2.x(),p1.y(),p2.x(),p2.y());
         painter->restore();
     }
-
     void draw_test_marker(QPainter* painter,  QVector2D camera_angle, QPointF marker_angle, QPointF fov, QSize image_size, QColor col=QColor(0xdd, 0, 0xdd, 0xaa)){
         QPoint p = globalToLocal( camera_angle, marker_angle, fov, image_size);
         if(p.x() < -100 || p.x() > image_size.width()+100) return;
@@ -177,8 +176,8 @@ private:
     }
 
     void drawVector(QPainter* painter, QPoint start, QPoint stop, QPointF coef, QColor col=QColor(0x00, 0xdd, 0, 0xaa)){
-        qDebug()<<"len"<<abs((start-stop).manhattanLength());
-        if (abs((start-stop).manhattanLength())<3) return;
+//        qDebug()<<"len"<<abs((start-stop).manhattanLength());
+        if (abs((start-stop).manhattanLength())<5) return;
         painter->setPen(QPen(col, 1));
         start= QPointF(start.x()*coef.x(),start.y()*coef.y()).toPoint();
         stop= QPointF(stop.x()*coef.x(),stop.y()*coef.y()).toPoint();
@@ -192,151 +191,110 @@ private:
 //        painter->drawText(stop + QPoint(10, -10),QString("%1 %2").arg(stop.x()-start.x(),0,'f',1).arg(stop.y()-start.y(),0,'f',1));
     }
 
-    void draw_azimuth_scale(QPainter* painter, double headingDeg, double cameraZoom){
-        const int y = 30;
-        const int scaleWidth = width() * 0.8;
-        const int centerX = width() / 2;
-        const int leftX = centerX - scaleWidth / 2;
+    void draw_azimuth_scale(QPainter *painter,double headingDeg,double zoom)
+    {
+        const int y=30;
+        const int scaleWidth=width()*0.8;
+        const int centerX=width()/2;
+        const int leftX=centerX-scaleWidth/2;
+        const double hfov=getHFOV(zoom);
+        const double halfFov=hfov*0.5;
 
-        painter->setPen(QPen(green_overlay, 2));
-        painter->drawLine(leftX, y, leftX + scaleWidth, y);
+        painter->setPen(QPen(green_overlay,2));
+        painter->drawLine(leftX,y,leftX+scaleWidth,y);
 
         QFontMetrics fm(painter->font());
+        double step;
+        if(hfov>40.0)      step=10;
+        else if(hfov>20.0) step=5;
+        else if(hfov>8.0)  step=2;
+        else if(hfov>3.0)  step=1;
+        else               step=0.5;
 
-        // адаптивный шаг делений
-        double step = cameraZoom / 10.0; // 10 делений на экран
-        if (step < 1) step = 1;
-        if (step > 30) step = 30;
-
-        for (double deg = -180; deg <= 540; deg += step)
+        double first=qFloor((headingDeg-halfFov)/step)*step;
+        for(double deg=first;deg<=headingDeg+halfFov;deg+=step)
         {
-            double delta = deg - headingDeg;
-
-            // нормализация угла
-            while (delta > 180) delta -= 360;
-            while (delta < -180) delta += 360;
-
-            if (std::abs(delta) > getHFOV(cameraZoom) / 2.0)
+            double delta=deg-headingDeg;
+            while(delta>180.0) delta-=360.0;
+            while(delta<-180.0) delta+=360.0;
+            double x=centerX+delta/hfov*scaleWidth;
+            bool major=qAbs(std::fmod(deg,step*5.0))<0.001;
+            int tickHeight=major?15:8;
+            painter->drawLine(x,y,x,y+tickHeight);
+            if(!major)
                 continue;
-
-            double norm = delta / getHFOV(cameraZoom);
-            int x = centerX + norm * scaleWidth;
-
-            bool major = (fmod(deg, step * 3) < 0.001);
-
-            int tickHeight = major ? 15 : 8;
-            painter->drawLine(x, y, x, y + tickHeight);
-
-            if (major)
+            int normDeg=((int)qRound(deg)%360+360)%360;
+            QString text;
+            switch(normDeg)
             {
-                int normDeg = ((int)deg) % 360;
-                if (normDeg < 0) normDeg += 360;
-
-                QString text;
-
-                switch (normDeg)
-                {
-                case 0:   text = "N";  break;
-                case 45:  text = "NE"; break;
-                case 90:  text = "E";  break;
-                case 135: text = "SE"; break;
-                case 180: text = "S";  break;
-                case 225: text = "SW"; break;
-                case 270: text = "W";  break;
-                case 315: text = "NW"; break;
-                default:
-                    text = QString::number(normDeg);
-                }
-
-                int tw = fm.horizontalAdvance(text);
-                painter->drawText(x - tw / 2,
-                                  y + tickHeight + fm.height(),
-                                  text);
+            case 0:   text="N";  break;
+            case 45:  text="NE"; break;
+            case 90:  text="E";  break;
+            case 135: text="SE"; break;
+            case 180: text="S";  break;
+            case 225: text="SW"; break;
+            case 270: text="W";  break;
+            case 315: text="NW"; break;
+            default:
+                text=QString::number(normDeg);
             }
+            int tw=fm.horizontalAdvance(text);
+            painter->drawText( x-tw/2, y+tickHeight+fm.height(), text);
         }
-
-        // центр (куда смотрит камера)
-        painter->setPen(QPen(red_overlay, 3));
-        painter->drawLine(centerX, y - 10, centerX, y + 15);
-
-        // текст угла
-        painter->setPen(QPen(gray_overlay, 3));
-        painter->drawText(centerX - 46,
-                          y - 15,
-                          QString::number(headingDeg, 'f', 2) + "°");
+        painter->setPen(QPen(red_overlay,3));
+        painter->drawLine(centerX,y-10,centerX,y+15);
+        painter->setPen(QPen(gray_overlay,3));
+        painter->drawText( centerX-25, y-15, QString("%1°").arg(headingDeg,0,'f',2));
+        double minutes=qAbs(headingDeg-qFloor(headingDeg))*60.0;
+        painter->drawText( centerX+30, y-15, QString("%1'").arg(minutes,0,'f',1));
+        double seconds=(minutes-qFloor(minutes))*60.0;
+        painter->drawText( centerX+75, y-15, QString("%1''").arg(seconds,0,'f',1));
     }
 
-    void drawPitchScale(QPainter* painter,double pitchDeg,double cameraZoom)
+    void drawPitchScale(QPainter *painter,double pitchDeg,double zoom)
     {
-        const int x = width() - 50;
-        const int scaleHeight = height() * 0.8;
-        const int centerY = height() / 2;
-        const int topY = centerY - scaleHeight / 2;
-
-        double vfov = getVFOV(cameraZoom); // ВАЖНО
-
-        painter->setPen(QPen(green_overlay, 2));
-        painter->drawLine(x, topY, x, topY + scaleHeight);
-
+        const int x=width()-50;
+        const int scaleHeight=height()*0.8;
+        const int centerY=height()/2;
+        const int topY=centerY-scaleHeight/2;
+        const double vfov=getVFOV(zoom);
+        const double halfFov=vfov*0.5;
+        painter->setPen(QPen(green_overlay,2));
+        painter->drawLine(x,topY,x,topY+scaleHeight);
         QFontMetrics fm(painter->font());
-
-        // нормализация углов камеры
-        while (pitchDeg > 180) pitchDeg -= 360;
-        while (pitchDeg < -180) pitchDeg += 360;
-
-        for (double deg = -90; deg <= 90; deg += 2.5)
+        while(pitchDeg>180.0) pitchDeg-=360.0;
+        while(pitchDeg<-180.0) pitchDeg+=360.0;
+        double step;
+        if(vfov>25.0)      step=10.0;
+        else if(vfov>12.0) step=5.0;
+        else if(vfov>5.0)  step=2.0;
+        else if(vfov>2.0)  step=1.0;
+        else               step=0.5;
+        double first=qFloor((pitchDeg-halfFov)/step)*step;
+        for(double deg=first;deg<=pitchDeg+halfFov;deg+=step)
         {
-            double delta = deg - pitchDeg;
-
-            if (std::abs(delta) > vfov / 2.0)
+            if(deg<-90.0||deg>90.0)
                 continue;
-
-            // ===== PROJECTION (главное отличие) =====
-            double yNorm =
-                tan(qDegreesToRadians(delta)) /
-                tan(qDegreesToRadians(vfov / 2.0));
-
-            int y = centerY - yNorm * scaleHeight / 2.0;
-
-            bool major = (fmod(deg, 10.0) < 0.001);
-
-            int tickLen = major ? 15 : 8;
-
-            painter->drawLine(x - tickLen, y, x, y);
-
-            if (major)
-            {
-                QString text = QString::number(deg);
-
-                painter->drawText(
-                    x - tickLen - fm.horizontalAdvance(text) - 5,
-                    y + fm.height() / 3,
-                    text);
-            }
+            double delta=deg-pitchDeg;
+            double yNorm= tan(qDegreesToRadians(delta))/tan(qDegreesToRadians(halfFov));
+            int y=centerY-yNorm*scaleHeight*0.5;
+            bool major=qAbs(std::fmod(deg,step*5.0))<0.001;
+            int tick=major?15:8;
+            painter->drawLine(x-tick,y,x,y);
+            if(!major)
+                continue;
+            QString text;
+            if(step>=1.0) text=QString::number(qRound(deg));
+            else text=QString::number(deg,'f',1);
+            painter->drawText( x-tick-fm.horizontalAdvance(text)-5, y+fm.height()/3, text);
         }
-
-        // центр (0 pitch камеры)
-        painter->setPen(QPen(red_overlay, 3));
-        painter->drawLine(x - 15, centerY, x + 10, centerY);
-
-        // текущее значение
-        painter->setPen(QPen(gray_overlay, 3));
-
-        double absAngle = std::abs(pitchDeg);
-        int deg = static_cast<int>(absAngle);
-        double min_full = (absAngle - deg) * 60.0;
-        int min = static_cast<int>(min_full);
-        double sec = (min_full - min) * 60.0;
-
-        if (pitchDeg < 0) deg = -deg;
-
-        painter->drawText(x + 10, centerY - 15,
-                          QString("%1°").arg(pitchDeg, 0, 'f', 1));
-
-        painter->drawText(x + 10, centerY + 5,
-                          QString("%1'").arg(min_full, 0, 'f', 1));
-
-        painter->drawText(x + 10, centerY + 25,
-                          QString("%1''").arg(sec, 0, 'f', 1));
+        painter->setPen(QPen(red_overlay,3));
+        painter->drawLine(x-15,centerY,x+10,centerY);
+        painter->setPen(QPen(gray_overlay,3));
+        painter->drawText( x+10, centerY-15, QString("%1°").arg(pitchDeg,0,'f',2));
+        double minutes=qAbs(pitchDeg-qFloor(pitchDeg))*60.0;
+        painter->drawText( x+10, centerY+5, QString("%1'").arg(minutes,0,'f',1));
+        double seconds=(minutes-qFloor(minutes))*60.0;
+        painter->drawText( x+10, centerY+25, QString("%1''").arg(seconds,0,'f',1));
     }
 };

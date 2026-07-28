@@ -66,7 +66,11 @@ public:
         target["name"] = name;
         target["id"] = dig_name;
         target["f_step"] = f_count;
-
+        QJsonArray pos;
+        pos.append(0);
+        pos.append(0);
+        target["pos"] = pos;
+        target["f_pos"] = pos;
         QJsonObject obj;
         obj["source"] = "user";
         obj["cmd"] = "target";

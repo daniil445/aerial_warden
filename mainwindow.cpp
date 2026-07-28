@@ -274,11 +274,12 @@ void MainWindow::on_btn_follow_clicked(bool checked)
     }
     if(checked){
         ui->btn_follow->setText("unfollow object");
-        // sender->sendTarget(focus_name,focus_name.split(' ').last().toInt(),ui->f_count->value());
+        sender->sendTarget(focus_name,focus_name.split(' ').last().toInt(),ui->f_count->value());
         // follower->scenario="follow";
     }else{
         ui->btn_follow->setText("follow object");
         sender->sendCmd("stop");
+        sender->sendTarget("",-1,0);
         // follower->scenario="";
     }
 }

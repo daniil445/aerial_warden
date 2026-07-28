@@ -17,7 +17,6 @@ SOURCES += \
     motion_controller/motion_controller.cpp \
     rtspreceiver.cpp \
     streamrecorder.cpp \
-    target_escort.cpp \
     videorecorder.cpp \
     videowidget.cpp
 
@@ -31,7 +30,6 @@ HEADERS += \
     motion_controller/motion_controller.h \
     rtspreceiver.h \
     streamrecorder.h \
-    target_escort.h \
     videorecorder.h \
     videowidget.h
 

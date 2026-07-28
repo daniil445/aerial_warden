@@ -15,10 +15,6 @@ void VideoWidget::initializeGL()
     initializeOpenGLFunctions();
     connect(this,&VideoWidget::imageClicked,this,&VideoWidget::onImageClicked);
     glClearColor(0, 0, 0, 1);
-//    QImage img(1920, 1080, QImage::Format_RGB888);
-//    img.fill(Qt::black);
-//    setFrame(0,img);
-//    m_image= img;
     statTimer.start();
 }
 
@@ -34,8 +30,7 @@ void VideoWidget::mousePressEvent(QMouseEvent *event)
 void VideoWidget::onImageClicked(QPoint p)
 {
     QPointF coef = QPointF(width()  / double(curr_size.width()), height() / double(curr_size.height()));
-    qDebug()<<"coef"<<coef;
-//    p = QPointF(p.x()*coef.x(),p.y()*coef.y()).toPoint();
+    qDebug()<<"coef"<<zoom<<getFOV(zoom);
     click_pos = localToGlobal(ptz_angle,p,getFOV(zoom),size());
     emit moveToCommand(click_pos);
 }
@@ -92,7 +87,7 @@ QImage VideoWidget::findFrameById(qint64 frameId)
 void VideoWidget::setMeta(const QJsonObject &obj)
 {
     QJsonArray ai =obj["ai"].toArray();
-    qDebug()<<"setMeta "<< ai.first()["id"]<<QString::number(m_frame_time/100000.0,'d',3);
+    qDebug()<<"setMeta "<< obj<<QString::number(m_frame_time/100000.0,'d',3);
     metaCounter++;
 //    qDebug()<<"meta"<<obj;
     QJsonObject camera =obj["rgb"].toObject();
@@ -217,21 +212,8 @@ void VideoWidget::paint_overlay(QPainter* painter)
 {
     if(show_aim){
         draw_aim(painter,QPoint(rect().width() /2,rect().height()/2));
-        draw_test_marker(painter, ptz_angle, QPoint(0,0), getFOV(zoom), size());
+        draw_test_marker(painter, ptz_angle, QPoint(rect().width() /2,rect().height()/2), getFOV(zoom), size());
         draw_test_marker(painter, ptz_angle, click_pos, getFOV(zoom), size());
-
-//        draw_aim(painter,QPoint(rect().width()*10 /20.0,rect().height()/2));
-//        draw_aim(painter,QPoint(rect().width()*11 /20.0,rect().height()/2));
-//        draw_aim(painter,QPoint(rect().width()*12 /20.0,rect().height()/2));
-//        draw_aim(painter,QPoint(rect().width()*13 /20.0,rect().height()/2));
-//        draw_aim(painter,QPoint(rect().width()*14 /20.0,rect().height()/2));
-//        draw_aim(painter,QPoint(rect().width()*15 /20.0,rect().height()/2));
-//        draw_aim(painter,QPoint(rect().width()*16 /20.0,rect().height()/2));
-//        draw_aim(painter,QPoint(rect().width()*17 /20.0,rect().height()/2));
-//        draw_aim(painter,QPoint(rect().width()*18 /20.0,rect().height()/2));
-//        draw_aim(painter,QPoint(rect().width()*19 /20.0,rect().height()/2));
-
-//        draw_degree(painter, ptz_angle, QPoint(11,10), QPoint(10,11), getFOV(zoom), size());
         drawMotionVector(painter,ptz_speed);
     }
 

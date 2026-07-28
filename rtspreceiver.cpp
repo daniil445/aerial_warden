@@ -53,7 +53,7 @@ void RtspReceiver::run()
             "rtspsrc name=src location=\"%1\" protocols=tcp latency=0 ! "
             "rtph264depay ! "
             "h264parse ! "
-            "avdec_h264 ! "
+            "nvh264dec ! "
             "videoconvert ! "
             "video/x-raw,format=RGB ! "
             "appsink name=sink sync=false emit-signals=true max-buffers=1 drop=true"

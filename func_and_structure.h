@@ -20,34 +20,18 @@ inline const QVector<double> zoomT  ={0.0,0.22,0.335,0.41,0.47,
 inline QStringList obj_name= {"Plane","Bird","Drone","Human","Car"};
 inline QVariantList obj_perfect_size= {78,114,26,36,56};
 
-inline double getHFOV(int zoom)
+inline double getHFOV(double zoom)
 {
-    const double hfovWide = 66.0;
-    const double hfovTele = 1.49;
-
-    zoom = qBound(1, zoom, 50);
-
-    double fw = 1.0 / tan(qDegreesToRadians(hfovWide * 0.5));
-    double ft = 1.0 / tan(qDegreesToRadians(hfovTele * 0.5));
-
-    double f = fw + zoomT[zoom - 1] * (ft - fw);
-
-    return qRadiansToDegrees(2.0 * atan(1.0 / f));
+    constexpr double hfovWide=66.0;
+    double k = 0.97 + (zoom - 1.0) * (1.40 - 0.97) / 49.0;
+    return qRadiansToDegrees(2.0*atan(tan(qDegreesToRadians(hfovWide*0.5))/zoom))*k;
 }
 
-inline double getVFOV(int zoom)
+inline double getVFOV(double zoom)
 {
-    const double vfovWide = 40.3;
-    const double vfovTele = 0.84;
-
-    zoom = qBound(1, zoom, 50);
-
-    double fw = 1.0 / tan(qDegreesToRadians(vfovWide * 0.5));
-    double ft = 1.0 / tan(qDegreesToRadians(vfovTele * 0.5));
-
-    double f = fw + zoomT[zoom - 1] * (ft - fw);
-
-    return qRadiansToDegrees(2.0 * atan(1.0 / f));
+    constexpr double vfovWide=40.3;
+    double k = 0.97 + (zoom - 1.0) * (1.40 - 0.97) / 49.0;
+    return qRadiansToDegrees(2.0*atan(tan(qDegreesToRadians(vfovWide*0.5)) /zoom))*k;
 }
 
 inline QPointF getFOV(int zoom)

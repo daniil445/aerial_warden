@@ -8,12 +8,12 @@
 
 #include <QMainWindow>
 #include <RtspReceiver.h>
-#include <target_escort.h>
 #include <conn_settings.h>
 #include <VideoRecorder.h>
 #include <QTimer>
 #include <StreamRecorder.h>
-
+#include "UDPSender.h"
+#include "func_and_structure.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
