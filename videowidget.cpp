@@ -237,6 +237,8 @@ void VideoWidget::draw_text(QPainter * painter)
     painter->drawText(10, 140, QString("PPS: %1").arg(pps, 3,'d',1));
     painter->drawText(10, 160, QString("DPS: %1").arg(dps, 3,'d',1));
 
+    painter->drawText(size().width()/2-50, 300, QString("%1 m").arg(st_dist, 5,'d',1));
+
 }
 
 void VideoWidget::draw_aim(QPainter * painter,QPoint aim,QPointF coef, QColor color)
