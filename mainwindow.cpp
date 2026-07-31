@@ -78,6 +78,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->controls, &motion_controller::moveCommand,this,&MainWindow::sendMoveCommand);
     connect(ui->controls, &motion_controller::moveToCommand,this,&MainWindow::sendMoveToCommand);
 
+
     // connect(ui->controls, &motion_controller::update_speed_x_y,follower,&target_escort::update_speed_x_y);
     connect(ui->controls, &motion_controller::change_cam,ui->widget_cam,&QTabWidget::setCurrentIndex);
             // [=](int val) { qDebug()<<"val"<<val;ui->widget_cam->setCurrentIndex(val);});
@@ -92,7 +93,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,ui->controls, &motion_controller::update_aim);
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_d,this,&MainWindow::update_distance);
     connect(ui->openGLWidget_RGB, &VideoWidget::moveToCommand,this,&MainWindow::sendMoveToCommandPos);
-
+    connect(ui->openGLWidget_RGB, &VideoWidget::moveTestToCommand,this,&MainWindow::sendMoveTestToCommand);
 
     QSettings settings("config.ini", QSettings::IniFormat);
     QStringList name= {"Plane","Bird","Drone","Human","Car"};
@@ -205,6 +206,11 @@ void MainWindow::sendMoveCommand(const QString& cmd, double speed, bool pressed)
         sender->sendMove(temp);
 //        qDebug()<<"sendMove"<<temp<<pressed<<speed<<temp_speed_x<<temp_speed_y;
     }
+}
+
+void MainWindow::sendMoveTestToCommand(QPointF pos)
+{
+    sender->sendMoveTest(QString("%0|%1").arg(pos.x()).arg(pos.y()));
 }
 void MainWindow::sendMoveToCommandPos(QPointF pos)
 {

@@ -43,6 +43,7 @@ public slots:
     void update_meta_pos(QVector2D,QVector3D);
     void update_distance(double);
     void sendMoveCommand(const QString& cmd, double speed, bool pressed);
+    void sendMoveTestToCommand(QPointF pos);
     void sendMoveToCommand(double pos_x, double pos_y, double speed_x, double speed_y);
     void sendMoveToCommandPos(QPointF pos);
     void update_list();

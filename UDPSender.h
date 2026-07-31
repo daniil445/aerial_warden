@@ -42,6 +42,16 @@ public:
         QByteArray data = doc.toJson(QJsonDocument::Compact);
         socket->writeDatagram(data, QHostAddress(main_ip), main_port);
     }
+    void sendMoveTest(QString value){
+        QJsonObject obj;
+        obj["source"] = "user";
+        obj["cmd"] = "move_test";
+        obj["value"] = value;
+        QJsonDocument doc(obj);
+        QByteArray data = doc.toJson(QJsonDocument::Compact);
+        qDebug()<<"sendMoveTest"<<data;
+        socket->writeDatagram(data, QHostAddress(main_ip), main_port);
+    }
     void sendMoveTo(QString value){
         QJsonObject obj;
         obj["source"] = "user";

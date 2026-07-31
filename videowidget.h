@@ -43,6 +43,7 @@ signals:
     void set_meta_d(double);
     void imageClicked(QPoint pos);
     void moveToCommand(QPointF);
+    void moveTestToCommand(QPointF);
 
 public slots:
     void setFrame(quint64 name,const QImage& img);
@@ -58,6 +59,7 @@ protected:
     void paintGL() override;
     void initializeGL() override;
     void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event)override;
 private slots:
     void onImageClicked(QPoint p);
 private:
@@ -85,7 +87,7 @@ private:
     QSize curr_size;
     int save_frame_count=30;
     int zoom=-1;
-
+    bool test_movement=false;
 
     QVector3D st_angle=QVector3D(0,0,0);
     QVector2D ptz_angle=QVector2D(0,0);

@@ -23,6 +23,15 @@ void VideoWidget::mousePressEvent(QMouseEvent *event)
     setFocus();
     if (event->button() == Qt::LeftButton)
         if(enable_click) emit imageClicked(event->pos());
+    if (event->button() == Qt::MiddleButton)test_movement=true;
+    if (event->button() == Qt::RightButton)test_movement=false;
+    QOpenGLWidget::mousePressEvent(event);
+}
+
+void VideoWidget::mouseMoveEvent(QMouseEvent *event)
+{
+    if (test_movement)
+        emit imageClicked(event->pos());
 
     QOpenGLWidget::mousePressEvent(event);
 }
@@ -32,7 +41,11 @@ void VideoWidget::onImageClicked(QPoint p)
     QPointF coef = QPointF(width()  / double(curr_size.width()), height() / double(curr_size.height()));
     qDebug()<<"coef"<<zoom<<getFOV(zoom);
     click_pos = localToGlobal(ptz_angle,p,getFOV(zoom),size());
-    emit moveToCommand(click_pos);
+    if(test_movement){
+        emit moveTestToCommand(click_pos);
+    }else{
+        emit moveToCommand(click_pos);
+    }
 }
 
 void VideoWidget::setFrame(quint64 time,const QImage& img)
