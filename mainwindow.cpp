@@ -88,9 +88,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_f_z,this,&MainWindow::update_meta);
     // connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_f_z,follower,&target_escort::update_meta);
     connect(this, &MainWindow::update_zoom,ui->controls, &motion_controller::update_zoom);
-    connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,this,&MainWindow::update_meta_pos);
+    connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p_g_m,this,&MainWindow::update_meta_pos);
     // connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,follower,&target_escort::update_meta_pos);
-    connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p,ui->controls, &motion_controller::update_aim);
+    connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_a_p_g_m,ui->controls, &motion_controller::update_aim);
     connect(ui->openGLWidget_RGB, &VideoWidget::set_meta_d,this,&MainWindow::update_distance);
     connect(ui->openGLWidget_RGB, &VideoWidget::moveToCommand,this,&MainWindow::sendMoveToCommandPos);
     connect(ui->openGLWidget_RGB, &VideoWidget::moveTestToCommand,this,&MainWindow::sendMoveTestToCommand);
@@ -131,7 +131,9 @@ void MainWindow::try_to_connect(QStringList url_main)
     meta_port=url_main[2].toInt();
     rgb_port=url_main[3].toInt();
     ir_port=url_main[4].toInt();
-    rtcp_receiver_RGB->setUrl("rtsp://"+main_ip+":"+QString::number(rgb_port)+"/rgb");
+//    rtcp_receiver_RGB->setUrl("rtsp://"+main_ip+":"+QString::number(rgb_port)+"/rgb");
+//    rtcp_receiver_RGB->setUrl("rtsp://admin:admin@192.168.26.108/cam/realmonitor?channel=1&subtype=0");
+    rtcp_receiver_RGB->setUrl("rtsp://admin:admin@192.168.26.108:554");
     rtcp_receiver_RGB->start();
     rtcp_receiver_IR ->setUrl("rtsp://"+main_ip+":"+QString::number(ir_port)+"/ir");
     rtcp_receiver_IR->start();
@@ -147,7 +149,8 @@ void MainWindow::try_to_connect(QStringList url_main)
 
 void MainWindow::recordTick()
 {
-    if(recorder->isRecording())recorder->writeFrame(composeRecorderFrame());
+    getTimeNs(1);
+    //if(recorder->isRecording())recorder->writeFrame(composeRecorderFrame());
 }
 
 QImage MainWindow::composeRecorderFrame()
@@ -176,11 +179,12 @@ void MainWindow::update_meta(quint64 frame, int zoom)
     emit update_zoom(zoom);
 }
 
-void MainWindow::update_meta_pos(QVector2D ang, QVector3D pos)
+void MainWindow::update_meta_pos(QVector2D ang, QVector3D pos, QVector3D gyro, QVector3D mag)
 {
-
     ui->l_angle->setText(QString("a = %0 b = %1").arg(ang.x()).arg(ang.y()));
     ui->l_position->setText((QString("x = %0 y = %1 z = %2").arg(pos.x()).arg(pos.y()).arg(pos.z())));
+    ui->l_gyro->setText((QString("x = %0 y = %1 z = %2").arg(gyro.x(), 6,'d',3).arg(gyro.y(), 6,'d',3).arg(gyro.z(), 6,'d',3)));
+    ui->l_magnit->setText((QString("x = %0 y = %1 z = %2").arg(mag.x(), 6,'d',3).arg(mag.y(), 6,'d',3).arg(mag.z(), 6,'d',3)));
 }
 
 void MainWindow::update_distance(double dist)
@@ -210,7 +214,7 @@ void MainWindow::sendMoveCommand(const QString& cmd, double speed, bool pressed)
 
 void MainWindow::sendMoveTestToCommand(QPointF pos)
 {
-    sender->sendMoveTest(QString("%0|%1").arg(pos.x()).arg(pos.y()));
+    sender->sendMoveTest(QString("%0|%1|%2|%3").arg(pos.x()).arg(pos.y()).arg(ui->openGLWidget_RGB->test_verificated).arg(ui->openGLWidget_RGB->test_search));
 }
 void MainWindow::sendMoveToCommandPos(QPointF pos)
 {
@@ -269,6 +273,7 @@ void MainWindow::on_obj_list_move_itemClicked(QListWidgetItem *item)
 {
     focus_name=item->text();
     ui->btn_follow->setEnabled(true);
+    //    sender->sendTarget(focus_name.split(' ').last().toInt(),ui->f_count->value(),1,QPointF(5,0),QPoint(0,0));
     if(storage_move.contains(focus_name))emit update_focus(storage_move.value(focus_name));
 }
 
@@ -280,12 +285,13 @@ void MainWindow::on_btn_follow_clicked(bool checked)
     }
     if(checked){
         ui->btn_follow->setText("unfollow object");
-        sender->sendTarget(focus_name,focus_name.split(' ').last().toInt(),ui->f_count->value());
+//        sender->sendTarget(focus_name.split(' ').last().toInt(),ui->f_count->value(),QPointF(0,0),QPoint(0,0));
+
         // follower->scenario="follow";
     }else{
         ui->btn_follow->setText("follow object");
         sender->sendCmd("stop");
-        sender->sendTarget("",-1,0);
+//        sender->sendTarget("",-1,0,QPointF(0,0),QPoint(0,0));
         // follower->scenario="";
     }
 }
@@ -307,8 +313,14 @@ void MainWindow::on_btn_search_clicked(bool checked)
 void MainWindow::on_btn_dist_clicked(bool checked)
 {
     if(checked){
-        ui->btn_dist->setText("stop calculate distance");
-        sender->sendCmd("range_find");
+        if(ui->dist_freq->currentIndex()!=0){
+            ui->btn_dist->setText("stop calculate distance");
+        }else{
+            ui->btn_dist->blockSignals(true);
+            ui->btn_dist->click();
+            ui->btn_dist->blockSignals(false);
+        }
+        sender->sendCmd("range_find",ui->dist_freq->currentIndex()+1);
     }else{
         ui->btn_dist->setText("calculate distance");
         sender->sendCmd("range_stop");
@@ -333,8 +345,9 @@ void MainWindow::on_self_record_clicked(bool checked)
         m_recordSize=this->grab().size();
         m_recordSize.setWidth(m_recordSize.width() & ~1);
         m_recordSize.setHeight(m_recordSize.height() & ~1);
-        recorder->start(m_recordSize,30);
-        recordTimer.start(33);
+//        recorder->start(m_recordSize,30);
+        recordTimer.setInterval(33);
+        recordTimer.start();
     }else{
         ui->self_record->setText("start self record");
         recordTimer.stop();
@@ -354,5 +367,18 @@ void MainWindow::on_stream_record_clicked(bool checked)
         stream_rgb_recorder->stop();
         stream_ir_recorder->stop();
     }
+}
+
+
+void MainWindow::on_pushButton_clicked()
+{
+    if(test_counter==0){
+         sender->sendTarget(focus_name.split(' ').last().toInt(),ui->f_count->value(),1,QPointF(5,0),QPoint(0,0));
+    }else if(test_counter==1){
+         sender->sendTarget(focus_name.split(' ').last().toInt(),ui->f_count->value(),1,QPointF(-5,0),QPoint(0,0));
+    }else if(test_counter==2){
+         sender->sendTarget(focus_name.split(' ').last().toInt(),ui->f_count->value(),1,QPointF(0.1,0),QPoint(0,0));
+    }
+    test_counter++;
 }
 

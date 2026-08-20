@@ -40,7 +40,7 @@ protected:
 public slots:
     void keyPressEvent(QKeyEvent* event);
     void keyReleaseEvent(QKeyEvent* event);
-    void update_aim(QVector2D,QVector3D);
+    void update_aim(QVector2D,QVector3D,QVector3D,QVector3D);
     void update_zoom(int zoom);
 private slots:
 

@@ -40,13 +40,19 @@ public:
         obj["value"] = val;
         QJsonDocument doc(obj);
         QByteArray data = doc.toJson(QJsonDocument::Compact);
+        qDebug()<<"sendCmd"<<data;
         socket->writeDatagram(data, QHostAddress(main_ip), main_port);
     }
     void sendMoveTest(QString value){
         QJsonObject obj;
         obj["source"] = "user";
         obj["cmd"] = "move_test";
-        obj["value"] = value;
+        QJsonArray pos;
+        pos.append(value.split("|")[0].toDouble());
+        pos.append(value.split("|")[1].toDouble());
+        pos.append(value.split("|")[2].toInt());
+        pos.append(value.split("|")[3].toInt());
+        obj["value"] = pos;
         QJsonDocument doc(obj);
         QByteArray data = doc.toJson(QJsonDocument::Compact);
         qDebug()<<"sendMoveTest"<<data;
@@ -59,6 +65,7 @@ public:
         obj["value"] = value;
         QJsonDocument doc(obj);
         QByteArray data = doc.toJson(QJsonDocument::Compact);
+        qDebug()<<"sendMoveTo"<<data;
         socket->writeDatagram(data, QHostAddress(main_ip), main_port);
     }
     void sendMove(QString value)
@@ -69,18 +76,22 @@ public:
         obj["value"] = value;
         QJsonDocument doc(obj);
         QByteArray data = doc.toJson(QJsonDocument::Compact);
+        qDebug() << "sendMove:" << data;
         socket->writeDatagram(data, QHostAddress(main_ip), main_port);
     }
-    void sendTarget(QString name,int dig_name,int f_count){
+    void sendTarget(int dig_name,int f_count,int filled,QPointF angle,QPoint pix){
         QJsonObject target;
-        target["name"] = name;
         target["id"] = dig_name;
         target["f_step"] = f_count;
+        target["filled"] = filled;
         QJsonArray pos;
-        pos.append(0);
-        pos.append(0);
-        target["pos"] = pos;
-        target["f_pos"] = pos;
+        pos.append(angle.x());
+        pos.append(angle.y());
+        target["a_pos"] = pos;
+        QJsonArray pos_p;
+        pos_p.append(angle.x());
+        pos_p.append(angle.y());
+        target["f_pos"] = pos_p;
         QJsonObject obj;
         obj["source"] = "user";
         obj["cmd"] = "target";

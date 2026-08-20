@@ -4,6 +4,8 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
+#include <QMetaObject>
+#include <QMutexLocker>
 
 #include <gst/rtp/gstrtpbuffer.h>
 #include <gst/video/video.h>
@@ -33,6 +35,7 @@ RtspReceiver::~RtspReceiver()
 void RtspReceiver::setUrl(const QString &url)
 {
     m_url = url;
+    if(m_url.split('/').last()=="rgb")rgb=true;
 }
 
 void RtspReceiver::stop()
@@ -50,25 +53,33 @@ void RtspReceiver::run()
 
     QString pipelineDesc =
         QString(
-            "rtspsrc name=src location=\"%1\" protocols=tcp latency=0 ! "
-            "rtph264depay ! "
+            "rtspsrc name=src location=\"%1\" protocols=udp latency=0 drop-on-latency=true buffer-mode=none ! "
+            "rtph264depay name=depay ! "
             "h264parse ! "
             "nvh264dec ! "
-            "videoconvert ! "
+            "videoconvert n-threads=0 ! "
             "video/x-raw,format=RGB ! "
-            "appsink name=sink sync=false emit-signals=true max-buffers=1 drop=true"
+            "appsink name=sink sync=false emit-signals=true max-buffers=1 drop=true enable-last-sample=false"
             ).arg(m_url);
 
 //    QString pipelineDesc =
 //        QString(
-//            "rtspsrc name=src location=\"%1\" protocols=tcp latency=0 ! "
-//            "rtph265depay ! "
-//            "h265parse ! "
-//            "avdec_h265 ! "
+//            "rtspsrc name=src "
+//            "location=\"%1\" "
+//            "protocols=udp "
+//            "latency=0 "
+//            "drop-on-latency=true "
+//            "buffer-mode=none ! "
+//            "rtph264depay ! "
+//            "h264parse ! "
+//            "nvh264dec ! "
 //            "videoconvert ! "
 //            "video/x-raw,format=RGB ! "
 //            "appsink name=sink "
-//            "sync=false emit-signals=true max-buffers=1 drop=true"
+//            "sync=false "
+//            "emit-signals=true "
+//            "max-buffers=1 "
+//            "drop=true"
 //        ).arg(m_url);
 
     GError *err = nullptr;
@@ -164,14 +175,46 @@ GstFlowReturn RtspReceiver::on_new_sample(GstAppSink *sink, gpointer user_data)
             QImage::Format_RGB888
             );
 
-        emit self->frameReady(self->m_lastSeq, img.copy());
+        bool scheduleDelivery = false;
+        {
+            QMutexLocker locker(&self->m_frameMutex);
+            // The GStreamer buffer becomes invalid after this callback, therefore
+            // exactly one deep copy is necessary.  Replace an older, undisplayed
+            // frame instead of growing Qt's queued-signal backlog.
+            self->m_latestFrame = img.copy();
+            self->m_latestFrameTime = self->m_lastSeq.load(std::memory_order_relaxed);
+            if (!self->m_deliveryScheduled) {
+                self->m_deliveryScheduled = true;
+                scheduleDelivery = true;
+            }
+        }
+        if (scheduleDelivery) {
+            QMetaObject::invokeMethod(self, [self]() { self->deliverLatestFrame(); },
+                                      Qt::QueuedConnection);
+        }
 //        qDebug()<<"frameFrame "<<self->m_lastSeq<<img.size();
         gst_buffer_unmap(buffer, &map);
     }
 
     gst_sample_unref(sample);
 
+//    qDebug() << "Frame get processing 0:" <<  QString::number( getTimeNs(0)/1000000000.0,'d',3)<<" s";
+
     return GST_FLOW_OK;
+}
+
+void RtspReceiver::deliverLatestFrame()
+{
+    QImage image;
+    quint64 time = 0;
+    {
+        QMutexLocker locker(&m_frameMutex);
+        image = m_latestFrame;
+        time = m_latestFrameTime;
+        m_deliveryScheduled = false;
+    }
+    if (!image.isNull())
+        emit frameReady(time, image);
 }
 
 void RtspReceiver::on_new_manager(
@@ -239,9 +282,10 @@ GstPadProbeReturn RtspReceiver::on_rtp_probe(
 
 
     gst_rtp_buffer_unmap(&rtp);
-    self->m_lastSeq = ts;
+    self->m_lastSeq.store(ts, std::memory_order_relaxed);
 
     //if(marker)qDebug() << "RTP" << "seq =" << seq<< "ts =" << ts << "ssrc =" << ssrc<< "marker =" << marker;
 
+//    if(marker && self->m_url.split('/').last()=="rgb")getTimeNs(0);
     return GST_PAD_PROBE_OK;
 }

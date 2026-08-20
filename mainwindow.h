@@ -40,7 +40,7 @@ signals:
 public slots:
     void try_to_connect(QStringList);
     void update_meta(quint64 frame, int zoom);
-    void update_meta_pos(QVector2D,QVector3D);
+    void update_meta_pos(QVector2D,QVector3D,QVector3D,QVector3D);
     void update_distance(double);
     void sendMoveCommand(const QString& cmd, double speed, bool pressed);
     void sendMoveTestToCommand(QPointF pos);
@@ -63,6 +63,8 @@ private slots:
     void on_self_record_clicked(bool checked);
 
     void on_stream_record_clicked(bool checked);
+
+    void on_pushButton_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -95,5 +97,5 @@ private:
     int rgb_port;
     int ir_port;
 
-
+    int test_counter=0;
 };

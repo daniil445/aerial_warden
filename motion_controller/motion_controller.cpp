@@ -248,7 +248,7 @@ void motion_controller::keyReleaseEvent(QKeyEvent* event)
     }
 }
 
-void motion_controller::update_aim(QVector2D ang,QVector3D pos)
+void motion_controller::update_aim(QVector2D ang,QVector3D pos,QVector3D gyro,QVector3D mag)
 {
     aim_x=ang.x();
     aim_y=ang.y();

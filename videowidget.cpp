@@ -8,6 +8,8 @@
 VideoWidget::VideoWidget(QWidget *parent)
     : QOpenGLWidget(parent)
 {
+    QSettings settings("config.ini", QSettings::IniFormat);
+    m_objectNames = settings.value("obj_name").toStringList();
 }
 
 void VideoWidget::initializeGL()
@@ -23,33 +25,32 @@ void VideoWidget::mousePressEvent(QMouseEvent *event)
     setFocus();
     if (event->button() == Qt::LeftButton)
         if(enable_click) emit imageClicked(event->pos());
-    if (event->button() == Qt::MiddleButton)test_movement=true;
-    if (event->button() == Qt::RightButton)test_movement=false;
+    if (event->button() == Qt::MiddleButton)test_search=!test_search;
+    if (event->button() == Qt::RightButton)test_verificated=!test_verificated;
     QOpenGLWidget::mousePressEvent(event);
 }
 
 void VideoWidget::mouseMoveEvent(QMouseEvent *event)
 {
-    if (test_movement)
-        emit imageClicked(event->pos());
-
+    emit imageClicked(event->pos());
     QOpenGLWidget::mousePressEvent(event);
 }
 
 void VideoWidget::onImageClicked(QPoint p)
 {
     QPointF coef = QPointF(width()  / double(curr_size.width()), height() / double(curr_size.height()));
-    qDebug()<<"coef"<<zoom<<getFOV(zoom);
-    click_pos = localToGlobal(ptz_angle,p,getFOV(zoom),size());
-    if(test_movement){
-        emit moveTestToCommand(click_pos);
-    }else{
-        emit moveToCommand(click_pos);
-    }
+    click_pos = localToGlobal(ptz_angle,p,zoom,size());
+        //emit moveTestToCommand(click_pos);
+    emit moveToCommand(click_pos);
 }
 
 void VideoWidget::setFrame(quint64 time,const QImage& img)
 {
+    d_frame_time=time;
+    if(clear_image){
+        temp_image=img;
+        update();
+    }
     frameCounter++;
     qint64 elapsed = statTimer.elapsed();
     if(elapsed >= 1000){
@@ -64,14 +65,14 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
 
     QueuedFrame qf;
     qf.frameId = time;
-    qf.image = img.copy();
+    // QImage is implicitly shared: the receiver already owns a safe deep copy.
+    qf.image = img;
     curr_size=img.size();
-    qDebug()<<"setFrame "<<QString::number(time/100000.0,'d',3);
+//    if(this->objectName()=="openGLWidget_RGB")qDebug()<<"setFrame "<<QString::number(time/100000.0,'d',3)<<m_frameQueue.length();
     QMutexLocker locker(&m_queueMutex);
     m_frameQueue.enqueue(qf);
 
-    if(m_frameQueue.size() > MAX_QUEUE){
-        QMutexLocker locker(&m_mutex);
+    while(m_frameQueue.size() > MAX_QUEUE){
         m_frameQueue.dequeue();
     }
     update();
@@ -82,11 +83,15 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
 QImage VideoWidget::findFrameById(qint64 frameId)
 {
     QMutexLocker locker(&m_queueMutex);
+    if(frameId==0 && (m_frameQueue.length()>MAX_QUEUE-1)) return m_frameQueue.dequeue().image;
     while (!m_frameQueue.isEmpty())
     {
         const QueuedFrame &frame = m_frameQueue.head();
+        if(frame.frameId > frameId){
+            return{};
+        }
         if(frame.frameId < frameId){
-            m_frameQueue.dequeue();
+            return m_frameQueue.dequeue().image;
             continue;
         }
         if(frame.frameId == frameId)return m_frameQueue.dequeue().image;
@@ -95,19 +100,17 @@ QImage VideoWidget::findFrameById(qint64 frameId)
     return {};
 }
 
-
-
 void VideoWidget::setMeta(const QJsonObject &obj)
 {
     QJsonArray ai =obj["ai"].toArray();
-    qDebug()<<"setMeta "<< obj<<QString::number(m_frame_time/100000.0,'d',3);
     metaCounter++;
 //    qDebug()<<"meta"<<obj;
     QJsonObject camera =obj["rgb"].toObject();
     m_frame_time = camera["ts"].toInteger();
-//    qDebug()<<"setMeta  "<<debugFrameQueue().contains(QString::number(m_frame_time,'d',0))
-//           <<QString::number(m_frame_time,'d',0)<<"|"<<debugFrameQueue()<<"||"
-//          <<(debugFrameQueue().split(' ').last().toLongLong()-m_frame_time)/100000.0;
+    //qDebug()<<"setMeta "<<QString::number(m_frame_time/100000.0,'d',3);
+    //qDebug()<<"setMeta  "<<debugFrameQueue().contains(QString::number(m_frame_time,'d',0))
+    //       <<QString::number(m_frame_time,'d',0)<<"|"<<debugFrameQueue()<<"||"
+    //      <<(debugFrameQueue().split(' ').last().toLongLong()-m_frame_time)/100000.0;
     zoom=camera["zoom"].toDouble();
     QJsonObject station =obj["st"].toObject();
 
@@ -133,12 +136,21 @@ void VideoWidget::setMeta(const QJsonObject &obj)
         st_pos.setZ(pos[2].toDouble());
     }
 
+    QJsonArray mag=station["mag"].toArray();
+    if(mag.count()>2){
+        st_mag.setX(mag[0].toDouble());
+        st_mag.setY(mag[1].toDouble());
+        st_mag.setZ(mag[2].toDouble());
+    }
+
     QJsonObject dist = obj["laser"].toObject();
     st_dist =dist["distance"].toDouble();
 
     QJsonObject target = obj["target"].toObject();
+    QJsonArray angle_coor=target["pos"].toArray();
+    if(angle_coor.count()>1) target_obj.angle_center = QPoint(target["a_pos"][0].toDouble(),target["a_pos"][1].toDouble());
     QJsonArray pix_coor=target["pos"].toArray();
-    if(pix_coor.count()>1) target_obj.pixel_center = QPoint(target["pos"][0].toDouble(),target["pos"][1].toDouble());
+    if(pix_coor.count()>1) target_obj.pixel_center = QPoint(target["f_pos"][0].toDouble(),target["f_pos"][1].toDouble());
     target_obj.classname=target["name"].toInt();
     target_obj.id=target["id"].toInt();
 //    qDebug()<<"setMetaTarget  "<<target<<target_obj.classname<<target_obj.id<<target_obj.pixel_center;
@@ -160,7 +172,7 @@ void VideoWidget::work_with_storage(QJsonArray ai){
         ai_obj.box= QRect(rect[0].toInt(), rect[1].toInt(), rect[2].toInt(), rect[3].toInt());
 //        if(ai_obj.classname!=-1){
             ai_obj.display_coef=coef;
-            ai_obj.angle_center=localToGlobal(ptz_angle,ai_obj.get_local_center(),getFOV(zoom),size());
+            ai_obj.angle_center=localToGlobal(ptz_angle,ai_obj.get_local_center(),zoom,size());
 //        }
         update_storage(ai_obj);
     }
@@ -183,11 +195,9 @@ void VideoWidget::work_with_storage(QJsonArray ai){
 
 void VideoWidget::update_storage(Detection obj){
     QMap<QString, Detection>* temp_storage =m_storage_move;
-    QSettings settings("config.ini", QSettings::IniFormat);
-    QStringList temp =settings.value("obj_name").toStringList();
     QString name="move "+QString::number(obj.id);
     if(obj.classname!=-1){
-        name=temp[obj.classname]+" "+QString::number(obj.id);
+        name=m_objectNames.value(obj.classname)+" "+QString::number(obj.id);
         temp_storage =m_storage;
     }
     if(!(*temp_storage).contains(name)){
@@ -207,26 +217,32 @@ void VideoWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT);
     QPainter painter(this);
-//    qDebug()<<"ready for read "<<m_frame_time;
-    QMutexLocker lock(&m_mutex);
-
-    emit set_meta_f_z(m_frame_time,zoom);
-    emit set_meta_a_p(ptz_angle,st_pos);
-    emit set_meta_d(st_dist);
-    QImage imgToDraw = findFrameById(m_frame_time);
-    painter.drawImage(rect(),imgToDraw);
+    if(clear_image){
+        painter.drawImage(rect(),temp_image);
+    }else{
+        painter.drawImage(rect(),findFrameById(m_frame_time));
+    }
     paintCounter++;
+    emit set_meta_f_z(d_frame_time,zoom);
+    emit set_meta_a_p_g_m(ptz_angle,st_pos,st_angle,st_mag);
+    emit set_meta_d(st_dist);
+//    paintCounter++;
     paint_overlay(&painter);
     paint_ai_objs(&painter,m_storage_move->values());
     paint_ai_objs(&painter,m_storage->values());
+    if (get_clear_frame){
+        getTimeNs(2);
+        get_clear_frame=false;
+    }
+//    qDebug() << "Frame get processing 1:" <<  QString::number( getTimeNs(1)/1000000000.0,'d',3)<<" s";
 }
 
 void VideoWidget::paint_overlay(QPainter* painter)
 {
     if(show_aim){
         draw_aim(painter,QPoint(rect().width() /2,rect().height()/2));
-        draw_test_marker(painter, ptz_angle, QPoint(rect().width() /2,rect().height()/2), getFOV(zoom), size());
-        draw_test_marker(painter, ptz_angle, click_pos, getFOV(zoom), size());
+        draw_test_marker(painter, ptz_angle, QPoint(0,0), zoom, size());
+        draw_test_marker(painter, ptz_angle, click_pos, zoom, size());
         drawMotionVector(painter,ptz_speed);
     }
 
@@ -249,6 +265,8 @@ void VideoWidget::draw_text(QPainter * painter)
     painter->drawText(10, 120, QString("FPS: %1").arg(fps, 3,'d',1));
     painter->drawText(10, 140, QString("PPS: %1").arg(pps, 3,'d',1));
     painter->drawText(10, 160, QString("DPS: %1").arg(dps, 3,'d',1));
+
+    painter->drawText(10, 250, QString("TS : %1").arg(m_frame_time/100000.0, 9,'d',3));
 
     painter->drawText(size().width()/2-50, 300, QString("%1 m").arg(st_dist, 5,'d',1));
 
@@ -298,8 +316,11 @@ void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)
         double pen_size=1;
         if(target_obj.id!=-1 && det.id==target_obj.id){
             pen_size=4;
-//            draw_aim(painter,target_obj.pixel_center.toPoint(),det.display_coef,red_overlay);
-            drawVector(painter,det.get_center(),target_obj.pixel_center.toPoint(),det.display_coef);
+            draw_aim(painter,target_obj.pixel_center.toPoint(),det.display_coef,red_overlay);
+            draw_test_marker(painter, ptz_angle, target_obj.angle_center, zoom, size());
+//            draw_aim(painter,target_obj.angle_center.toPoint(),det.display_coef,red_overlay);
+
+//            drawVector(painter,det.get_center(),target_obj.pixel_center.toPoint(),det.display_coef);
 //            qDebug()<<"paint"<<det.get_center()<<target_obj.pixel_center.toPoint();
 //            drawVector(painter,det.get_center(),target_obj.pixel_center.toPoint());
 
@@ -309,9 +330,7 @@ void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)
         painter->drawRect(QRect (r.topLeft().x()*det.display_coef.x(), r.topLeft().y()*det.display_coef.y(),
                                  r.width()*det.display_coef.x(), r.height()*det.display_coef.y()));
 
-        QSettings settings("config.ini", QSettings::IniFormat);
-        QStringList temp =settings.value("obj_name").toStringList();
-        QString label = QString("%1 %2 (p:%3)").arg(det.classname==-1?"move":temp.value(det.classname)).arg(det.id).arg(det.prec, 0, 'f', 2);
+        QString label = QString("%1 %2 (p:%3)").arg(det.classname==-1?"move":m_objectNames.value(det.classname)).arg(det.id).arg(det.prec, 0, 'f', 2);
         QFontMetrics fm = painter->fontMetrics();
         int textHeight = fm.height();
         painter->drawText(QPointF(r.bottomLeft().x()*det.display_coef.x(),r.bottomLeft().y()*det.display_coef.y()) + QPoint(0, textHeight), label);

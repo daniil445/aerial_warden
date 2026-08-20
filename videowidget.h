@@ -35,11 +35,16 @@ public:
     bool show_text =true;
     bool enable_click=true;
 
+    bool test_verificated=false;
+    bool test_search=false;
+
+    bool clear_image=false;
+    bool get_clear_frame=false;
 signals:
     void update_list();
     void update_size(QSize size);
     void set_meta_f_z(quint64 frame, int zoom);
-    void set_meta_a_p(QVector2D,QVector3D);
+    void set_meta_a_p_g_m(QVector2D,QVector3D,QVector3D,QVector3D);
     void set_meta_d(double);
     void imageClicked(QPoint pos);
     void moveToCommand(QPointF);
@@ -66,10 +71,8 @@ private:
     QMap<QString, Detection>* m_storage_move = nullptr;
     QMap<QString, Detection>* m_storage = nullptr;
 
-    QMutex m_mutex;
-
     QMutex m_queueMutex;
-    int MAX_QUEUE=5;
+    static constexpr int MAX_QUEUE = 3;
     // QQueue<QueuedMeta> m_metaQueue;
     QQueue<QueuedFrame> m_frameQueue;
     QString debugFrameQueue()
@@ -87,12 +90,13 @@ private:
     QSize curr_size;
     int save_frame_count=30;
     int zoom=-1;
-    bool test_movement=false;
+
 
     QVector3D st_angle=QVector3D(0,0,0);
     QVector2D ptz_angle=QVector2D(0,0);
     QVector2D ptz_speed=QVector2D(0,0);
     QVector3D st_pos=QVector3D(0,0,0);
+    QVector3D st_mag=QVector3D(0,0,0);
     QPointF click_pos;
     double st_dist=-1;
 
@@ -105,6 +109,7 @@ private:
     double dps = 0;
 
     QVector<Detection> last_detection;
+    QStringList m_objectNames;
     Detection main_obj;
     Detection target_obj;
     QColor green_overlay=QColor(0, 0xdd, 0, 0xaa);
@@ -122,16 +127,16 @@ private:
 
     inline void draw_degree( QPainter* painter, const QVector2D& camera_angle, const QPointF& p1_deg, const QPointF& p2_deg, const QPointF& fov, const QSize& size, QColor col = QColor(0xdd,0,0xdd,0xaa))
     {
-        QPoint p1 = globalToLocal(camera_angle, p1_deg, fov, size);
-        QPoint p2 =  globalToLocal( camera_angle, p2_deg, fov, size);
+        QPoint p1 = globalToLocal(camera_angle, p1_deg, zoom, size);
+        QPoint p2 =  globalToLocal( camera_angle, p2_deg, zoom, size);
         painter->save();
         painter->setPen(QPen(col,2));
         painter->drawLine(p1.x(),p1.y(),p2.x(),p1.y());
         painter->drawLine(p2.x(),p1.y(),p2.x(),p2.y());
         painter->restore();
     }
-    void draw_test_marker(QPainter* painter,  QVector2D camera_angle, QPointF marker_angle, QPointF fov, QSize image_size, QColor col=QColor(0xdd, 0, 0xdd, 0xaa)){
-        QPoint p = globalToLocal( camera_angle, marker_angle, fov, image_size);
+    void draw_test_marker(QPainter* painter,  QVector2D camera_angle, QPointF marker_angle, int zoom, QSize image_size, QColor col=QColor(0xdd, 0, 0xdd, 0xaa)){
+        QPoint p = globalToLocal( camera_angle, marker_angle, zoom, image_size);
         if(p.x() < -100 || p.x() > image_size.width()+100) return;
         if(p.y() < -100 || p.y() > image_size.height()+100) return;
         painter->save();
@@ -199,7 +204,7 @@ private:
         const int scaleWidth=width()*0.8;
         const int centerX=width()/2;
         const int leftX=centerX-scaleWidth/2;
-        const double hfov=getHFOV(zoom);
+        const double hfov=HFOV[zoom-1];
         const double halfFov=hfov*0.5;
 
         painter->setPen(QPen(green_overlay,2));
@@ -259,7 +264,7 @@ private:
         const int scaleHeight=height()*0.8;
         const int centerY=height()/2;
         const int topY=centerY-scaleHeight/2;
-        const double vfov=getVFOV(zoom);
+        const double vfov=VFOV[zoom-1];
         const double halfFov=vfov*0.5;
         painter->setPen(QPen(green_overlay,2));
         painter->drawLine(x,topY,x,topY+scaleHeight);
