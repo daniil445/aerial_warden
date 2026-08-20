@@ -80,24 +80,27 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
 }
 
 
-QImage VideoWidget::findFrameById(qint64 frameId)
+QImage VideoWidget::findFrameById(quint64 frameId)
 {
     QMutexLocker locker(&m_queueMutex);
-    if(frameId==0 && (m_frameQueue.length()>MAX_QUEUE-1)) return m_frameQueue.dequeue().image;
-    while (!m_frameQueue.isEmpty())
-    {
-        const QueuedFrame &frame = m_frameQueue.head();
-        if(frame.frameId > frameId){
-            return{};
-        }
-        if(frame.frameId < frameId){
-            return m_frameQueue.dequeue().image;
-            continue;
-        }
-        if(frame.frameId == frameId)return m_frameQueue.dequeue().image;
-        return m_frameQueue.dequeue().image;
+    if (m_frameQueue.isEmpty())
+        return {};
+
+    // Until metadata arrives, displaying the freshest frame is preferable to
+    // accumulating startup latency.
+    if (frameId == 0) {
+        QImage newest = m_frameQueue.back().image;
+        m_frameQueue.clear();
+        return newest;
     }
-    return {};
+
+    // Pick the newest video frame that is not newer than the metadata.  Consume
+    // all older candidates so playback cannot fall progressively behind.
+    QImage candidate;
+    while (!m_frameQueue.isEmpty() && m_frameQueue.head().frameId <= frameId)
+        candidate = m_frameQueue.dequeue().image;
+
+    return candidate;
 }
 
 void VideoWidget::setMeta(const QJsonObject &obj)
@@ -220,7 +223,11 @@ void VideoWidget::paintGL()
     if(clear_image){
         painter.drawImage(rect(),temp_image);
     }else{
-        painter.drawImage(rect(),findFrameById(m_frame_time));
+        QImage candidate = findFrameById(m_frame_time);
+        if (!candidate.isNull())
+            m_displayFrame = candidate;
+        if (!m_displayFrame.isNull())
+            painter.drawImage(rect(),m_displayFrame);
     }
     paintCounter++;
     emit set_meta_f_z(d_frame_time,zoom);

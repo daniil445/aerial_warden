@@ -72,9 +72,10 @@ private:
     QMap<QString, Detection>* m_storage = nullptr;
 
     QMutex m_queueMutex;
-    static constexpr int MAX_QUEUE = 3;
+    static constexpr int MAX_QUEUE = 8;
     // QQueue<QueuedMeta> m_metaQueue;
     QQueue<QueuedFrame> m_frameQueue;
+    QImage m_displayFrame;
     QString debugFrameQueue()
     {
         QMutexLocker locker(&m_queueMutex);
@@ -123,7 +124,7 @@ private:
     void draw_text(QPainter *painter);
     void work_with_storage(QJsonArray ai);
     void update_storage(Detection ogj);
-    QImage findFrameById(qint64 frameId);
+    QImage findFrameById(quint64 frameId);
 
     inline void draw_degree( QPainter* painter, const QVector2D& camera_angle, const QPointF& p1_deg, const QPointF& p2_deg, const QPointF& fov, const QSize& size, QColor col = QColor(0xdd,0,0xdd,0xaa))
     {

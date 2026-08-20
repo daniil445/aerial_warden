@@ -31,10 +31,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionInitialize_rotator, &QAction::triggered,[=]() {sender->sendCmd("init");});
 
     rtcp_receiver_RGB = new RtspReceiver(this);
-    connect(rtcp_receiver_RGB, &RtspReceiver::frameReady, ui->openGLWidget_RGB, &VideoWidget::setFrame,Qt::QueuedConnection);
+    connect(rtcp_receiver_RGB, &RtspReceiver::frameReady, ui->openGLWidget_RGB, &VideoWidget::setFrame);
 
     rtcp_receiver_IR = new RtspReceiver(this);
-    connect(rtcp_receiver_IR, &RtspReceiver::frameReady, ui->openGLWidget_IR, &VideoWidget::setFrame,Qt::QueuedConnection);
+    connect(rtcp_receiver_IR, &RtspReceiver::frameReady, ui->openGLWidget_IR, &VideoWidget::setFrame);
 
 
     sender = new CommandSender(this);
