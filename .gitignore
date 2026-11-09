@@ -37,6 +37,8 @@ configs/*
 /.qmake.stash
 debug/*
 release/*
+doc/*
+video/*
 build/*
 .qtc_clangd/*
 model/*

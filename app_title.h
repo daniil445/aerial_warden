@@ -1,0 +1,1 @@
+#define APP_WINDOW_TITLE "EOS EYE"

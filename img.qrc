@@ -1,5 +1,13 @@
 <RCC>
+    <qresource prefix="/translations">
+        <file alias="aerialwarden_ru_RU.qm">translations/aerialwarden_ru_RU.qm</file>
+    </qresource>
+    <qresource prefix="/style">
+        <file>theme.qss</file>
+    </qresource>
     <qresource prefix="/img">
+        <file alias="app_icon.png">image/icons/aerialwarden_eye_v1.png</file>
+        <file>image/icons/precision_magnifier_generated.png</file>
         <file>image/arrows/arrow clockwise.png</file>
         <file>image/arrows/arrow counterclock.png</file>
         <file>image/arrows/arrow_bottom.png</file>

@@ -20,7 +20,7 @@ RtspReceiver::RtspReceiver(QObject *parent)
 
        qputenv("GST_PLUGIN_PATH", (base + "/gstreamer-1.0").toUtf8());
        qputenv("GST_PLUGIN_SYSTEM_PATH", (base + "/gstreamer-1.0").toUtf8());
-       qputenv("GST_REGISTRY_FORK", "no"); // важно для Windows debug
+       qputenv("GST_REGISTRY_FORK", "no"); // required for Windows debug builds
    }
    gst_init(nullptr, nullptr);
 }
@@ -34,29 +34,35 @@ RtspReceiver::~RtspReceiver()
 
 void RtspReceiver::setUrl(const QString &url)
 {
+    m_stopRequested=false;
     m_url = url;
     if(m_url.split('/').last()=="rgb")rgb=true;
 }
 
 void RtspReceiver::stop()
 {
-    m_running = false;
-
-    if (m_pipeline) {
-        gst_element_send_event(m_pipeline, gst_event_new_eos());
-    }
+    m_stopRequested=true;
+    m_running=false;
+    // run() polls its bus every 100 ms and owns all pipeline destruction.
 }
 
 void RtspReceiver::run()
 {
     m_running = true;
+    if (m_stopRequested) { m_running=false; return; }
+    m_decodedFrameIndex.store(0, std::memory_order_relaxed);
+    {
+        QMutexLocker locker(&m_timestampMutex);
+        m_rtpTimestampByPts.clear();
+    }
 
     QString pipelineDesc =
         QString(
             "rtspsrc name=src location=\"%1\" protocols=udp latency=0 drop-on-latency=true buffer-mode=none ! "
             "rtph264depay name=depay ! "
             "h264parse ! "
-            "nvh264dec ! "
+//            "nvh264dec ! "
+            "avdec_h264 ! "
             "videoconvert n-threads=0 ! "
             "video/x-raw,format=RGB ! "
             "appsink name=sink sync=false emit-signals=true max-buffers=1 drop=true enable-last-sample=false"
@@ -175,14 +181,35 @@ GstFlowReturn RtspReceiver::on_new_sample(GstAppSink *sink, gpointer user_data)
             QImage::Format_RGB888
             );
 
+        quint64 frameTime = self->m_lastSeq.load(std::memory_order_relaxed);
+        const GstClockTime framePts = GST_BUFFER_PTS(buffer);
+        if (GST_CLOCK_TIME_IS_VALID(framePts)) {
+            QMutexLocker locker(&self->m_timestampMutex);
+            auto timestampIt = self->m_rtpTimestampByPts.find(framePts);
+            if (timestampIt != self->m_rtpTimestampByPts.end()) {
+                frameTime = timestampIt.value();
+                while (!self->m_rtpTimestampByPts.isEmpty()
+                       && self->m_rtpTimestampByPts.firstKey() <= framePts) {
+                    self->m_rtpTimestampByPts.erase(self->m_rtpTimestampByPts.begin());
+                }
+            }
+        }
+        const quint64 frameIndex = self->m_decodedFrameIndex.fetch_add(
+            1, std::memory_order_relaxed);
+        QImage ownedFrame = img.copy();
+
+        // Unlike frameReady, this signal is deliberately not coalesced: while a
+        // recorder is connected, every decoded RGB frame must reach it.
+        emit self->frameDecoded(frameIndex, frameTime, ownedFrame);
+
         bool scheduleDelivery = false;
         {
             QMutexLocker locker(&self->m_frameMutex);
             // The GStreamer buffer becomes invalid after this callback, therefore
             // exactly one deep copy is necessary.  Replace an older, undisplayed
             // frame instead of growing Qt's queued-signal backlog.
-            self->m_latestFrame = img.copy();
-            self->m_latestFrameTime = self->m_lastSeq.load(std::memory_order_relaxed);
+            self->m_latestFrame = ownedFrame;
+            self->m_latestFrameTime = frameTime;
             if (!self->m_deliveryScheduled) {
                 self->m_deliveryScheduled = true;
                 scheduleDelivery = true;
@@ -283,6 +310,13 @@ GstPadProbeReturn RtspReceiver::on_rtp_probe(
 
     gst_rtp_buffer_unmap(&rtp);
     self->m_lastSeq.store(ts, std::memory_order_relaxed);
+
+    if (marker && GST_CLOCK_TIME_IS_VALID(pts)) {
+        QMutexLocker locker(&self->m_timestampMutex);
+        self->m_rtpTimestampByPts.insert(pts, ts);
+        while (self->m_rtpTimestampByPts.size() > 240)
+            self->m_rtpTimestampByPts.erase(self->m_rtpTimestampByPts.begin());
+    }
 
     //if(marker)qDebug() << "RTP" << "seq =" << seq<< "ts =" << ts << "ssrc =" << ssrc<< "marker =" << marker;
 

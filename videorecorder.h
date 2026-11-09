@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QImage>
+#include <QString>
 
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
@@ -14,10 +15,12 @@ public:
     explicit VideoRecorder(QObject *parent=nullptr);
     ~VideoRecorder();
 
-    bool start(QSize ,int fps=30);
+    bool start(QSize ,int fps=30, const QString &basePath=QString());
     void stop();
     bool isRecording() const{return m_running;}
-    void writeFrame(const QImage &frame);
+    quint64 frameCount() const{return m_frame;}
+    QString outputBasePath() const{return m_outputBasePath;}
+    bool writeFrame(const QImage &frame, quint64 sourceTimestamp);
 
 private:
     bool buildPipeline(int w,int h,int fps);
@@ -38,4 +41,8 @@ private:
     int m_fps=30;
 
     quint64 m_frame=0;
+    quint64 m_firstSourceTimestamp=0;
+    quint64 m_previousSourceTimestamp=0;
+    bool m_haveSourceTimestamp=false;
+    QString m_outputBasePath;
 };

@@ -22,7 +22,7 @@ public:
 
     bool bind(QString addr,int port)
     {
-        // слушаем все интерфейсы
+        // listen on all interfaces
         bool ok = socket->bind(QHostAddress::Any, port);
 //        bool ok = socket->bind(QHostAddress(addr), port);
         // qDebug() << "UDP:" <<addr<< port;

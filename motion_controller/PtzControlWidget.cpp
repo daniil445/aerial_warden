@@ -36,18 +36,17 @@ void PtzControlWidget::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.fillRect(this->rect(), QColor("#30363D"));
 
     const QRectF rect = controlRect();
     const QPointF center = rect.center();
     const qreal radius = rect.width() / 2.0;
     const qreal innerRadius = radius * 0.36;
 
-    const QColor border("#cfd6e3");
-    const QColor sectorFill("#f8fafc");
-    const QColor sectorPressed("#e8f1ff");
-    const QColor centerFill("#202838");
-    const QColor icon("#111827");
-    const QColor temp("#1b2230");
+    const QColor border("#2F81F7");
+    const QColor sectorFill("#000000");
+    const QColor sectorPressed("#102A43");
+    const QColor icon("#58A6FF");
 
     const Direction directions[8] = {
         Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft
@@ -57,7 +56,7 @@ void PtzControlWidget::paintEvent(QPaintEvent *)
         const Direction direction = directions[i];
         QPainterPath path = sectorPath(i);
 
-        painter.setPen(QPen(border, 1.4));
+        painter.setPen(QPen(border, 1.5));
         painter.setBrush(direction == m_pressedDirection && m_hasPress ? sectorPressed : sectorFill);
         painter.drawPath(path);
 
@@ -72,13 +71,13 @@ void PtzControlWidget::paintEvent(QPaintEvent *)
         drawArrow(painter, direction, arrowCenter, radius * 0.16);
     }
 
-    painter.setPen(QPen(temp, 1.5));
-    painter.setBrush(QColor("#232b3a"));
+    painter.setPen(QPen(border, 1.5));
+    painter.setBrush(m_hasPress && m_pressedDirection == Stop ? sectorPressed : sectorFill);
     painter.drawEllipse(center, innerRadius, innerRadius);
 
     const qreal stopSize = innerRadius * 0.34;
     painter.setPen(Qt::NoPen);
-    painter.setBrush(Qt::white);
+    painter.setBrush(icon);
     painter.drawRoundedRect(
         QRectF(center.x() - stopSize / 2.0, center.y() - stopSize / 2.0, stopSize, stopSize),
         1.5,

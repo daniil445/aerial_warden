@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QVector2D>
 #include <QVector3D>
+#include <QSettings>
 
 namespace Ui {
 class motion_controller;
@@ -21,8 +22,15 @@ public:
     ~motion_controller();
     double x_speed;
     double y_speed;
+    QPointF mouseSpeedLimits() const;
+    QPointF joystickSpeedLimits() const;
+    void restorePreferences(QSettings &settings);
+    void savePreferences(QSettings &settings) const;
+    bool screenClickEnabled() const;
+    bool stabilizationEnabled() const;
 
 signals:
+    void preferencesChanged();
     void sig_homing_xy();
     void sig_upd_axis_status(int);
     void sig_move_xy_to(double,double);
@@ -42,16 +50,9 @@ public slots:
     void keyReleaseEvent(QKeyEvent* event);
     void update_aim(QVector2D,QVector3D,QVector3D,QVector3D);
     void update_zoom(int zoom);
-private slots:
-
-
-    void on_pb_move_x_clicked();
-
-    void on_pb_move_y_clicked();
-
-    void on_pb_all_axis_move_clicked();
-
 private:
+    void appendPosition(const QString &name, double x, double y);
+    bool m_havePosition = false;
     Ui::motion_controller *ui;
     QTimer *upd_tmr;
 
@@ -60,10 +61,7 @@ private:
     double aim_x=0;
     double aim_y=0;
 
-    bool target_chosed=false;
     bool connected=false;
-    double target_x;
-    double target_y;
 };
 
 #endif // MOTION_CONTROLLER_H

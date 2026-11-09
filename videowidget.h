@@ -3,6 +3,7 @@
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QImage>
+#include <QJsonObject>
 #include <QMutex>
 #include <QRect>
 #include <QQueue>
@@ -22,6 +23,19 @@ class VideoWidget : public QOpenGLWidget, protected QOpenGLFunctions
 
 public:
     explicit VideoWidget(QWidget* parent = nullptr);
+    QSize sourceSize() const { return curr_size; }
+    void setPrecisionMode(bool enabled) { m_precisionMode = enabled; update(); }
+    void setPreviewBorder(bool visible) { m_previewBorder = visible; update(); }
+    void setOverlaysEnabled(bool enabled) {
+        if (m_overlaysEnabled == enabled) return;
+        m_overlaysEnabled = enabled;
+        update();
+    }
+    bool mouseSteeringActive() const { return m_mouseSteering; }
+    void setMouseSteeringOverlayVisible(bool visible) { m_showMouseSteering = visible; update(); }
+    QImage renderFrameForRecording(const QImage& frame);
+    // May be called by the recorder's streaming thread; reads no GUI objects.
+    QJsonObject recordingTelemetrySnapshot(quint64 videoTimestamp) const;
     QImage temp_image;
 
     bool motion_visible =true;
@@ -49,6 +63,10 @@ signals:
     void imageClicked(QPoint pos);
     void moveToCommand(QPointF);
     void moveTestToCommand(QPointF);
+    void mouseSteeringStarted();
+    void mouseSteeringStep(QPoint sectors);
+    void mouseSteeringStopped();
+    void mouseZoomSteps(int steps);
 
 public slots:
     void setFrame(quint64 name,const QImage& img);
@@ -65,12 +83,33 @@ protected:
     void initializeGL() override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event)override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
+    void focusOutEvent(QFocusEvent *event) override;
+    void hideEvent(QHideEvent *event) override;
+    bool event(QEvent *event) override;
 private slots:
     void onImageClicked(QPoint p);
 private:
+    void paintPreviewBorder(QPainter *painter);
+    bool m_previewBorder = false;
+    void stopMouseSteering();
+    void paintMouseSteering(QPainter* painter);
+    bool m_mouseSteering = false;
+    bool m_overlaysEnabled = true;
+    bool m_precisionMode = false;
+    QImage m_precisionIcon;
+    bool m_showMouseSteering = true;
+    QPointF m_mouseOrigin;
+    QPointF m_mousePosition;
+    QPoint m_mouseSectors;
+    int m_wheelRemainder = 0;
     QMap<QString, Detection>* m_storage_move = nullptr;
     QMap<QString, Detection>* m_storage = nullptr;
 
+    mutable QMutex m_recordingTelemetryMutex;
+    QJsonObject m_recordingTelemetry;
+    QString m_recordingCamera;
     QMutex m_queueMutex;
     static constexpr int MAX_QUEUE = 8;
     // QQueue<QueuedMeta> m_metaQueue;
@@ -126,18 +165,18 @@ private:
     void update_storage(Detection ogj);
     QImage findFrameById(quint64 frameId);
 
-    inline void draw_degree( QPainter* painter, const QVector2D& camera_angle, const QPointF& p1_deg, const QPointF& p2_deg, const QPointF& fov, const QSize& size, QColor col = QColor(0xdd,0,0xdd,0xaa))
+    inline void draw_degree( QPainter* painter, const QVector2D& camera_angle, const QPointF& p1_deg, const QPointF& p2_deg, const QPointF& fov, const QSize& size, const bool type, QColor col = QColor(0xdd,0,0xdd,0xaa))
     {
-        QPoint p1 = globalToLocal(camera_angle, p1_deg, zoom, size);
-        QPoint p2 =  globalToLocal( camera_angle, p2_deg, zoom, size);
+        QPoint p1 = globalToLocal(camera_angle, p1_deg, zoom, size, type);
+        QPoint p2 =  globalToLocal( camera_angle, p2_deg, zoom, size, type);
         painter->save();
         painter->setPen(QPen(col,2));
         painter->drawLine(p1.x(),p1.y(),p2.x(),p1.y());
         painter->drawLine(p2.x(),p1.y(),p2.x(),p2.y());
         painter->restore();
     }
-    void draw_test_marker(QPainter* painter,  QVector2D camera_angle, QPointF marker_angle, int zoom, QSize image_size, QColor col=QColor(0xdd, 0, 0xdd, 0xaa)){
-        QPoint p = globalToLocal( camera_angle, marker_angle, zoom, image_size);
+    void draw_test_marker(QPainter* painter,  QVector2D camera_angle, QPointF marker_angle, int zoom, QSize image_size, const bool type, QColor col=QColor(0xdd, 0, 0xdd, 0xaa)){
+        QPoint p = globalToLocal( camera_angle, marker_angle, zoom, image_size, type);
         if(p.x() < -100 || p.x() > image_size.width()+100) return;
         if(p.y() < -100 || p.y() > image_size.height()+100) return;
         painter->save();
@@ -201,11 +240,11 @@ private:
 
     void draw_azimuth_scale(QPainter *painter,double headingDeg,double zoom)
     {
-        const int y=30;
+        const int y=painter->fontMetrics().height()+16;
         const int scaleWidth=width()*0.8;
         const int centerX=width()/2;
         const int leftX=centerX-scaleWidth/2;
-        const double hfov=HFOV[zoom-1];
+        const double hfov=HFOV_RGB[qBound(0, qRound(zoom)-1, int(HFOV_RGB.size())-1)];
         const double halfFov=hfov*0.5;
 
         painter->setPen(QPen(green_overlay,2));
@@ -252,24 +291,25 @@ private:
         painter->setPen(QPen(red_overlay,3));
         painter->drawLine(centerX,y-10,centerX,y+15);
         painter->setPen(QPen(gray_overlay,3));
-        painter->drawText( centerX-25, y-15, QString("%1°").arg(headingDeg,0,'f',2));
         double minutes=qAbs(headingDeg-qFloor(headingDeg))*60.0;
-        painter->drawText( centerX+30, y-15, QString("%1'").arg(minutes,0,'f',1));
         double seconds=(minutes-qFloor(minutes))*60.0;
-        painter->drawText( centerX+75, y-15, QString("%1''").arg(seconds,0,'f',1));
+        const QString heading = QString("%1°  %2'  %3''").arg(headingDeg,0,'f',2)
+                .arg(minutes,0,'f',1).arg(seconds,0,'f',1);
+        painter->drawText(QRect(0, 2, width(), fm.height()), Qt::AlignCenter, heading);
     }
 
     void drawPitchScale(QPainter *painter,double pitchDeg,double zoom)
     {
-        const int x=width()-50;
+        QFontMetrics fm(painter->font());
+        const int textWidth = qMax(fm.horizontalAdvance("-180.00°"), fm.horizontalAdvance("60.0''")) + 8;
+        const int x=width()-textWidth-14;
         const int scaleHeight=height()*0.8;
         const int centerY=height()/2;
         const int topY=centerY-scaleHeight/2;
-        const double vfov=VFOV[zoom-1];
+        const double vfov=VFOV_RGB[qBound(0, qRound(zoom)-1, int(VFOV_RGB.size())-1)];
         const double halfFov=vfov*0.5;
         painter->setPen(QPen(green_overlay,2));
         painter->drawLine(x,topY,x,topY+scaleHeight);
-        QFontMetrics fm(painter->font());
         while(pitchDeg>180.0) pitchDeg-=360.0;
         while(pitchDeg<-180.0) pitchDeg+=360.0;
         double step;
@@ -294,15 +334,19 @@ private:
             QString text;
             if(step>=1.0) text=QString::number(qRound(deg));
             else text=QString::number(deg,'f',1);
-            painter->drawText( x-tick-fm.horizontalAdvance(text)-5, y+fm.height()/3, text);
+            painter->drawText(QRect(x-tick-65, y-fm.height()/2, 60, fm.height()),
+                              Qt::AlignRight | Qt::AlignVCenter, text);
         }
         painter->setPen(QPen(red_overlay,3));
         painter->drawLine(x-15,centerY,x+10,centerY);
         painter->setPen(QPen(gray_overlay,3));
-        painter->drawText( x+10, centerY-15, QString("%1°").arg(pitchDeg,0,'f',2));
         double minutes=qAbs(pitchDeg-qFloor(pitchDeg))*60.0;
-        painter->drawText( x+10, centerY+5, QString("%1'").arg(minutes,0,'f',1));
         double seconds=(minutes-qFloor(minutes))*60.0;
-        painter->drawText( x+10, centerY+25, QString("%1''").arg(seconds,0,'f',1));
+        const QStringList values{QString("%1°").arg(pitchDeg,0,'f',2),
+                                 QString("%1'").arg(minutes,0,'f',1),
+                                 QString("%1''").arg(seconds,0,'f',1)};
+        for (int i=0; i<values.size(); ++i)
+            painter->drawText(QRect(x+12, centerY-3*fm.height()/2+i*fm.height(),
+                                    textWidth, fm.height()), Qt::AlignCenter, values[i]);
     }
 };

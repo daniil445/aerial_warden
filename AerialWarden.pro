@@ -1,15 +1,25 @@
 QT       += core gui \
     network
 
+win32:RC_ICONS = image/icons/aerialwarden_eye_v1.ico
+
 greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets openglwidgets
 
 CONFIG += c++17
+TRANSLATIONS += translations/aerialwarden_ru_RU.ts
+APP_WINDOW_TITLE = "EOS EYE"
+APP_TITLE_CONTENT = "$${LITERAL_HASH}define APP_WINDOW_TITLE \"$${APP_WINDOW_TITLE}\""
+!write_file($$OUT_PWD/app_title.h, APP_TITLE_CONTENT): error(Cannot write app_title.h)
+INCLUDEPATH += $$OUT_PWD
+win32:LIBS += -ldwmapi
+INCLUDEPATH += $$PWD/motion_controller
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    joystickcontroller.cpp \
     conn_settings.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -21,6 +31,8 @@ SOURCES += \
     videowidget.cpp
 
 HEADERS += \
+    collapsiblegroups.h \
+    joystickcontroller.h \
     UDPReceiver.h \
     UDPSender.h \
     conn_settings.h \
@@ -34,6 +46,7 @@ HEADERS += \
     videowidget.h
 
 FORMS += \
+    interface_settings.ui \
     conn_settings.ui \
     mainwindow.ui \
     motion_controller/motion_controller.ui

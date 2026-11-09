@@ -4,18 +4,63 @@
 
 #include <QMouseEvent>
 #include <QSettings>
+#include <QDebug>
+#include <QDateTime>
+#include <QApplication>
+#include <QWheelEvent>
+#include <QFocusEvent>
+#include <QHideEvent>
+#include <algorithm>
+#include <cmath>
 
 VideoWidget::VideoWidget(QWidget *parent)
     : QOpenGLWidget(parent)
 {
+    m_precisionIcon.load(":/img/image/icons/precision_magnifier_generated.png");
     QSettings settings("config.ini", QSettings::IniFormat);
     m_objectNames = settings.value("obj_name").toStringList();
+    connect(qApp, &QGuiApplication::applicationStateChanged, this,
+            [this](Qt::ApplicationState state) {
+        if (state != Qt::ApplicationActive) stopMouseSteering();
+    });
+}
+
+QJsonObject VideoWidget::recordingTelemetrySnapshot(quint64 videoTimestamp) const
+{
+    QMutexLocker locker(&m_recordingTelemetryMutex);
+    QJsonObject result=m_recordingTelemetry;
+    QJsonObject snapshot;
+    snapshot.insert("source","VideoWidget");
+    snapshot.insert("camera",m_recordingCamera);
+    snapshot.insert("available",!m_recordingTelemetry.isEmpty());
+    snapshot.insert("video_timestamp",qint64(videoTimestamp));
+    snapshot.insert("captured_at_utc",QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs));
+    result.insert("_video_widget",snapshot);
+    return result;
+}
+
+QImage VideoWidget::renderFrameForRecording(const QImage &frame)
+{
+    if (frame.isNull() || size().isEmpty())
+        return {};
+
+    QImage result(size(), QImage::Format_RGB888);
+    result.fill(Qt::black);
+    QPainter painter(&result);
+    painter.drawImage(result.rect(), frame);
+    paint_overlay(&painter);
+    if (m_storage_move)
+        paint_ai_objs(&painter, m_storage_move->values());
+    if (m_storage)
+        paint_ai_objs(&painter, m_storage->values());
+    paintPreviewBorder(&painter);
+    return result;
 }
 
 void VideoWidget::initializeGL()
 {
     initializeOpenGLFunctions();
-    connect(this,&VideoWidget::imageClicked,this,&VideoWidget::onImageClicked);
+    connect(this,&VideoWidget::imageClicked,this,&VideoWidget::onImageClicked, Qt::UniqueConnection);
     glClearColor(0, 0, 0, 1);
     statTimer.start();
 }
@@ -23,24 +68,129 @@ void VideoWidget::initializeGL()
 void VideoWidget::mousePressEvent(QMouseEvent *event)
 {
     setFocus();
+    if (event->button() == Qt::RightButton) {
+        m_mouseSteering = true;
+        m_mouseOrigin = m_mousePosition = event->position();
+        m_mouseSectors = {};
+        m_wheelRemainder = 0;
+        setCursor(Qt::CrossCursor);
+        emit mouseSteeringStarted();
+        update();
+        event->accept();
+        return;
+    }
+    if (m_mouseSteering) { event->accept(); return; }
     if (event->button() == Qt::LeftButton)
         if(enable_click) emit imageClicked(event->pos());
     if (event->button() == Qt::MiddleButton)test_search=!test_search;
-    if (event->button() == Qt::RightButton)test_verificated=!test_verificated;
     QOpenGLWidget::mousePressEvent(event);
 }
 
 void VideoWidget::mouseMoveEvent(QMouseEvent *event)
 {
-    emit imageClicked(event->pos());
-    QOpenGLWidget::mousePressEvent(event);
+    if (m_mouseSteering) {
+        if (!(event->buttons() & Qt::RightButton)) {
+            stopMouseSteering();
+        } else {
+            m_mousePosition = event->position();
+            const QPointF delta = m_mousePosition - m_mouseOrigin;
+            // Ten independent steps per axis, each 10 logical pixels wide.
+            const auto sector = [](double value) {
+                return int(std::clamp(value / 10.0, -10.0, 10.0));
+            };
+            const QPoint sectors(sector(delta.x()), sector(delta.y()));
+            if (sectors != m_mouseSectors) {
+                m_mouseSectors = sectors;
+                emit mouseSteeringStep(sectors);
+            }
+        }
+        update();
+        event->accept();
+        return;
+    }
+    if (enable_click && (event->buttons() & Qt::LeftButton))
+        emit imageClicked(event->pos());
+    QOpenGLWidget::mouseMoveEvent(event);
+}
+
+void VideoWidget::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::RightButton && m_mouseSteering) {
+        stopMouseSteering();
+        event->accept();
+        return;
+    }
+    QOpenGLWidget::mouseReleaseEvent(event);
+}
+
+void VideoWidget::wheelEvent(QWheelEvent *event)
+{
+    if (m_mouseSteering && (event->buttons() & Qt::RightButton)) {
+        m_wheelRemainder += event->angleDelta().y();
+        const int steps = m_wheelRemainder / 120;
+        m_wheelRemainder %= 120;
+        if (steps) emit mouseZoomSteps(steps);
+    }
+    // Do not propagate the wheel to zoom controls outside the RMB gesture.
+    event->accept();
+}
+
+void VideoWidget::stopMouseSteering()
+{
+    if (!m_mouseSteering) return;
+    m_mouseSteering = false;
+    m_mouseSectors = {};
+    m_wheelRemainder = 0;
+    unsetCursor();
+    emit mouseSteeringStopped();
+    update();
+}
+
+void VideoWidget::focusOutEvent(QFocusEvent *event)
+{
+    stopMouseSteering();
+    QOpenGLWidget::focusOutEvent(event);
+}
+
+void VideoWidget::hideEvent(QHideEvent *event)
+{
+    stopMouseSteering();
+    QOpenGLWidget::hideEvent(event);
+}
+
+bool VideoWidget::event(QEvent *event)
+{
+    if (event->type() == QEvent::WindowDeactivate || event->type() == QEvent::UngrabMouse)
+        stopMouseSteering();
+    return QOpenGLWidget::event(event);
+}
+
+void VideoWidget::paintMouseSteering(QPainter* painter)
+{
+    if (!m_overlaysEnabled) return;
+    if (!m_mouseSteering || !m_showMouseSteering) return;
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setPen(QPen(QColor(255, 210, 70, 200), 1));
+    painter->setBrush(QColor(255, 210, 70, 18));
+    painter->drawRect(QRectF(m_mouseOrigin - QPointF(100, 100), QSizeF(200, 200)));
+    painter->drawRect(QRectF(m_mouseOrigin - QPointF(10, 10), QSizeF(20, 20)));
+    painter->drawLine(m_mouseOrigin, m_mousePosition);
+    for (int i = -10; i <= 10; ++i) {
+        painter->drawLine(m_mouseOrigin + QPointF(i * 10, -3), m_mouseOrigin + QPointF(i * 10, 3));
+        painter->drawLine(m_mouseOrigin + QPointF(-3, i * 10), m_mouseOrigin + QPointF(3, i * 10));
+    }
+    painter->setBrush(QColor(255, 210, 70));
+    painter->drawEllipse(m_mousePosition, 4, 4);
+    painter->restore();
 }
 
 void VideoWidget::onImageClicked(QPoint p)
 {
     QPointF coef = QPointF(width()  / double(curr_size.width()), height() / double(curr_size.height()));
-    click_pos = localToGlobal(ptz_angle,p,zoom,size());
+    click_pos = localToGlobal(ptz_angle,p,zoom,size(),this->objectName().contains("RGB"));
         //emit moveTestToCommand(click_pos);
+    qDebug()<<this->objectName()<<click_pos<<ptz_angle;
     emit moveToCommand(click_pos);
 }
 
@@ -67,13 +217,27 @@ void VideoWidget::setFrame(quint64 time,const QImage& img)
     qf.frameId = time;
     // QImage is implicitly shared: the receiver already owns a safe deep copy.
     qf.image = img;
-    curr_size=img.size();
+    if (curr_size != img.size() && !img.isNull()) {
+        curr_size = img.size();
+        emit update_size(curr_size);
+    }
 //    if(this->objectName()=="openGLWidget_RGB")qDebug()<<"setFrame "<<QString::number(time/100000.0,'d',3)<<m_frameQueue.length();
     QMutexLocker locker(&m_queueMutex);
     m_frameQueue.enqueue(qf);
 
+    if (m_frame_time != 0) {
+        const qint64 telemetryLag = qint64(time) - qint64(m_frame_time);
+//        qDebug() << objectName() << "Telemetry lag (latest video TS - telemetry TS):"
+//                 << QString::number(telemetryLag/90000.0,'d',3) << "timestamp ticks"
+//                 << "latest video TS:" << time << "telemetry TS:" << m_frame_time;
+    }
+
     while(m_frameQueue.size() > MAX_QUEUE){
-        m_frameQueue.dequeue();
+        // If telemetry has fallen behind the entire queue, keep playback moving
+        // by displaying the oldest frame just before it leaves the queue.
+        const QueuedFrame oldest = m_frameQueue.dequeue();
+        if (!clear_image && m_frame_time != 0 && oldest.frameId > m_frame_time)
+            m_displayFrame = oldest.image;
     }
     update();
 
@@ -107,13 +271,19 @@ void VideoWidget::setMeta(const QJsonObject &obj)
 {
     QJsonArray ai =obj["ai"].toArray();
     metaCounter++;
-//    qDebug()<<"meta"<<obj;
-    QJsonObject camera =obj["rgb"].toObject();
+
+    QJsonObject camera;
+    if(this->objectName().contains("RGB")){
+        camera =obj["rgb"].toObject();
+    }else{
+        camera =obj["ir"].toObject();
+    }
     m_frame_time = camera["ts"].toInteger();
-    //qDebug()<<"setMeta "<<QString::number(m_frame_time/100000.0,'d',3);
-    //qDebug()<<"setMeta  "<<debugFrameQueue().contains(QString::number(m_frame_time,'d',0))
-    //       <<QString::number(m_frame_time,'d',0)<<"|"<<debugFrameQueue()<<"||"
-    //      <<(debugFrameQueue().split(' ').last().toLongLong()-m_frame_time)/100000.0;
+//    qDebug()<<"setMeta "<<QString::number(m_frame_time/90000.0,'d',3)<<obj;
+//    qDebug()<<"setMeta  "<<debugFrameQueue().contains(QString::number(m_frame_time,'d',0))
+//           <<QString::number(m_frame_time,'d',0)<<"|"<<debugFrameQueue()<<"||"
+//          <<(debugFrameQueue().split(' ').last().toLongLong()-m_frame_time)/100000.0;
+
     zoom=camera["zoom"].toDouble();
     QJsonObject station =obj["st"].toObject();
 
@@ -146,8 +316,11 @@ void VideoWidget::setMeta(const QJsonObject &obj)
         st_mag.setZ(mag[2].toDouble());
     }
 
+
     QJsonObject dist = obj["laser"].toObject();
     st_dist =dist["distance"].toDouble();
+
+    emit set_meta_a_p_g_m(ptz_angle,st_pos,st_angle,st_mag);
 
     QJsonObject target = obj["target"].toObject();
     QJsonArray angle_coor=target["pos"].toArray();
@@ -161,6 +334,11 @@ void VideoWidget::setMeta(const QJsonObject &obj)
 
     QMutexLocker locker(&m_queueMutex);
     work_with_storage(ai);
+    {
+        QMutexLocker snapshotLock(&m_recordingTelemetryMutex);
+        m_recordingTelemetry=obj;
+        m_recordingCamera=objectName().contains("RGB") ? "rgb" : "ir";
+    }
     emit update_list();
 }
 
@@ -175,7 +353,7 @@ void VideoWidget::work_with_storage(QJsonArray ai){
         ai_obj.box= QRect(rect[0].toInt(), rect[1].toInt(), rect[2].toInt(), rect[3].toInt());
 //        if(ai_obj.classname!=-1){
             ai_obj.display_coef=coef;
-            ai_obj.angle_center=localToGlobal(ptz_angle,ai_obj.get_local_center(),zoom,size());
+            ai_obj.angle_center=localToGlobal(ptz_angle,ai_obj.get_local_center(),zoom,size(), this->objectName().contains("RGB"));
 //        }
         update_storage(ai_obj);
     }
@@ -216,10 +394,21 @@ void VideoWidget::update_focus(Detection focus)
     main_obj=focus;
 }
 
+void VideoWidget::paintPreviewBorder(QPainter *painter)
+{
+    if (!m_previewBorder) return;
+    painter->save();
+    painter->setPen(QPen(QColor("#58A6FF"), 2));
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRect(QRectF(rect()).adjusted(1, 1, -1, -1));
+    painter->restore();
+}
+
 void VideoWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT);
     QPainter painter(this);
+    if(zoom==-1) { paintMouseSteering(&painter); paintPreviewBorder(&painter); return; }
     if(clear_image){
         painter.drawImage(rect(),temp_image);
     }else{
@@ -229,14 +418,19 @@ void VideoWidget::paintGL()
         if (!m_displayFrame.isNull())
             painter.drawImage(rect(),m_displayFrame);
     }
+
     paintCounter++;
-    emit set_meta_f_z(d_frame_time,zoom);
-    emit set_meta_a_p_g_m(ptz_angle,st_pos,st_angle,st_mag);
-    emit set_meta_d(st_dist);
+    if(this->objectName().contains("RGB")){
+        emit set_meta_f_z(m_frame_time,zoom);
+        emit set_meta_a_p_g_m(ptz_angle,st_pos,st_angle,st_mag);
+        emit set_meta_d(st_dist);
+    }
 //    paintCounter++;
     paint_overlay(&painter);
     paint_ai_objs(&painter,m_storage_move->values());
     paint_ai_objs(&painter,m_storage->values());
+    paintMouseSteering(&painter);
+    paintPreviewBorder(&painter);
     if (get_clear_frame){
         getTimeNs(2);
         get_clear_frame=false;
@@ -246,10 +440,11 @@ void VideoWidget::paintGL()
 
 void VideoWidget::paint_overlay(QPainter* painter)
 {
+    if (!m_overlaysEnabled) return;
     if(show_aim){
         draw_aim(painter,QPoint(rect().width() /2,rect().height()/2));
-        draw_test_marker(painter, ptz_angle, QPoint(0,0), zoom, size());
-        draw_test_marker(painter, ptz_angle, click_pos, zoom, size());
+        draw_test_marker(painter, ptz_angle, QPoint(0,0), zoom, size(), this->objectName().contains("RGB"));
+        draw_test_marker(painter, ptz_angle, click_pos, zoom, size(), this->objectName().contains("RGB"));
         drawMotionVector(painter,ptz_speed);
     }
 
@@ -258,6 +453,8 @@ void VideoWidget::paint_overlay(QPainter* painter)
         draw_azimuth_scale(painter,ptz_angle.x(),zoom);
         drawPitchScale(painter,ptz_angle.y(),zoom);
     }
+    if (m_precisionMode && !m_precisionIcon.isNull())
+        painter->drawImage(QRect(width()/2-24, height()/2+84, 48, 48), m_precisionIcon);
 }
 
 void VideoWidget::draw_text(QPainter * painter)
@@ -275,7 +472,8 @@ void VideoWidget::draw_text(QPainter * painter)
 
     painter->drawText(10, 250, QString("TS : %1").arg(m_frame_time/100000.0, 9,'d',3));
 
-    painter->drawText(size().width()/2-50, 300, QString("%1 m").arg(st_dist, 5,'d',1));
+    painter->drawText(QRect(0, height()/2+45, width(), painter->fontMetrics().height()+4),
+                      Qt::AlignCenter, QString("%1 m").arg(st_dist, 0,'f',1));
 
 }
 
@@ -299,6 +497,7 @@ void VideoWidget::draw_aim(QPainter * painter,QPoint aim,QPointF coef, QColor co
 
 void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)
 {
+    if (!m_overlaysEnabled) return;
     if(objects.length()==0){ objects=last_detection;
     }else{ last_detection=objects;}
     for (const Detection& det : objects)
@@ -324,11 +523,11 @@ void VideoWidget::paint_ai_objs(QPainter * painter, QVector<Detection> objects)
         if(target_obj.id!=-1 && det.id==target_obj.id){
             pen_size=4;
             draw_aim(painter,target_obj.pixel_center.toPoint(),det.display_coef,red_overlay);
-            draw_test_marker(painter, ptz_angle, target_obj.angle_center, zoom, size());
+            draw_test_marker(painter, ptz_angle, target_obj.angle_center, zoom, size(), this->objectName().contains("RGB"));
 //            draw_aim(painter,target_obj.angle_center.toPoint(),det.display_coef,red_overlay);
 
 //            drawVector(painter,det.get_center(),target_obj.pixel_center.toPoint(),det.display_coef);
-//            qDebug()<<"paint"<<det.get_center()<<target_obj.pixel_center.toPoint();
+            qDebug()<<"target"<<target_obj.angle_center<<target_obj.pixel_center.toPoint();
 //            drawVector(painter,det.get_center(),target_obj.pixel_center.toPoint());
 
         }

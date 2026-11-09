@@ -2,6 +2,7 @@
 
 #include <QThread>
 #include <QImage>
+#include <QMap>
 #include <QMutex>
 #include <QString>
 #include <atomic>
@@ -24,6 +25,9 @@ public:
 signals:
     void connected();
     void disconnected();
+    // Emitted for every decoded frame. Intended for lossless consumers such as
+    // interface recording; frameReady remains coalesced for low-latency display.
+    void frameDecoded(quint64 frameIndex, quint64 time, QImage image);
     void frameReady(quint64 time, QImage image);
 
 protected:
@@ -38,6 +42,7 @@ private:
 private:
     QString m_url="";
     std::atomic_bool m_running{false};
+    std::atomic_bool m_stopRequested{false};
     bool rgb=false;
 
     GstElement *m_manager = nullptr;
@@ -45,6 +50,9 @@ private:
     GstElement *m_sink = nullptr;
 
     std::atomic<quint64> m_lastSeq{0};
+    std::atomic<quint64> m_decodedFrameIndex{0};
+    QMutex m_timestampMutex;
+    QMap<quint64,quint64> m_rtpTimestampByPts;
     QMutex m_frameMutex;
     QImage m_latestFrame;
     quint64 m_latestFrameTime = 0;
